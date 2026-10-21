@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Activity, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { Button, Field, Input } from '../components/ui.jsx';
+import logo from '../assets/logo.png';
 
 export default function Login() {
   const { user, login, resetPassword, ready, authError } = useAuth();
@@ -47,9 +48,8 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-white">
-            <Activity size={26} />
-          </div>
+          <img src={logo} alt="Klinik Utama Baruga Medical Center logo" className="mb-4 h-16 w-16 object-contain" />
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Klinik Utama</p>
           <h1 className="text-xl font-semibold text-slate-900">Baruga Medical Center</h1>
           <p className="mt-1 text-sm text-slate-500">Sign in to the Patient Tracker</p>
         </div>

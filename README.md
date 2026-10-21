@@ -1,4 +1,4 @@
-# Baruga Medical Center — Patient Tracker (React)
+# Klinik Utama Baruga Medical Center — Patient Tracker (React)
 
 React rewrite of the original single-file patient tracker.
 

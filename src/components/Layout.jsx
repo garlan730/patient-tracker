@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, Menu, Activity, Loader2, AlertTriangle, X } from 'lucide-react';
+import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, Menu, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { ROLES } from '../lib/constants.js';
 import { cx } from './ui.jsx';
+import logo from '../assets/logo.png';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -21,11 +22,12 @@ export default function Layout() {
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">
-          <Activity size={20} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1.5">
+          <img src={logo} alt="" className="h-full w-full object-contain" />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-white">Baruga Medical</p>
+          <p className="text-[11px] uppercase tracking-wide text-brand-200">Klinik Utama</p>
+          <p className="text-sm font-semibold text-white">Baruga Medical Center</p>
           <p className="text-xs text-brand-200">Patient Tracker</p>
         </div>
       </div>
@@ -86,7 +88,8 @@ export default function Layout() {
           <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Open menu">
             <Menu size={20} />
           </button>
-          <span className="text-sm font-semibold text-slate-800">Baruga Medical Center</span>
+          <img src={logo} alt="" className="h-6 w-6 object-contain" />
+          <span className="truncate text-sm font-semibold text-slate-800">Klinik Utama Baruga Medical Center</span>
         </header>
         <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {error && (
