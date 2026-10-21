@@ -17,9 +17,14 @@ change it if you rename the repo).
 
 ## Firebase backend
 
-Sign-in uses **Firebase Authentication** (email + password) and data lives in **Cloud Firestore**
+Sign-in uses **Firebase Authentication** with a **username + password** and data lives in **Cloud Firestore**
 (`asia-southeast2`, Jakarta) in project `patient-tracker-8a04c` — config in `src/lib/firebase.js`.
 
+- **Usernames:** Firebase needs an email, so a username like `sinta` is stored as
+  `sinta@patient-tracker-8a04c.firebaseapp.com` (no mailbox). Accounts created with a real email can still
+  sign in by typing that email. See `toLoginEmail` in `src/lib/firebase.js`.
+- **Passwords:** anyone can change their own (key icon next to Sign out). For a forgotten password, an admin
+  uses **Users → Reset password**: delete the old login in the Firebase console, then set a new password in the app.
 - **Who can sign in:** a Firebase Auth account *and* an active `users/{uid}` document
   (`name`, `email`, `role: admin|staff`, `active: true`). Admins add staff from the **Users** page.
 - **Security rules:** `firestore.rules`. After changing it, paste it into

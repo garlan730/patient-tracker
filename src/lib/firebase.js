@@ -21,12 +21,13 @@ export const db = getFirestore(app);
 export function friendlyError(err) {
   const code = err?.code || '';
   const messages = {
-    'auth/invalid-credential': 'Invalid email or password.',
-    'auth/wrong-password': 'Invalid email or password.',
-    'auth/user-not-found': 'Invalid email or password.',
-    'auth/invalid-email': 'That email address is not valid.',
+    'auth/invalid-credential': 'Invalid username or password.',
+    'auth/wrong-password': 'Invalid username or password.',
+    'auth/user-not-found': 'Invalid username or password.',
+    'auth/invalid-email': 'That username or email is not valid.',
     'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
-    'auth/email-already-in-use': 'An account with this email already exists. If it was deactivated, reactivate it from the list.',
+    'auth/email-already-in-use': 'That username is already taken. If the user was deactivated, reactivate them from the list.',
+    'auth/requires-recent-login': 'For security, sign out and sign in again, then retry.',
     'auth/weak-password': 'Password is too weak. Use at least 6 characters.',
     'auth/password-does-not-meet-requirements': 'Password does not meet the password policy set in Firebase.',
     'auth/network-request-failed': 'No internet connection. Check your network and try again.',
@@ -35,3 +36,21 @@ export function friendlyError(err) {
   };
   return messages[code] || err?.message || 'Something went wrong.';
 }
+
+// Firebase sign-in needs an email address, so usernames are mapped to an internal address on the
+// project's own domain (no mailbox). Anything containing "@" is treated as a real email, so
+// accounts created with an email keep working.
+const LOGIN_DOMAIN = `${firebaseConfig.projectId}.firebaseapp.com`;
+
+export const USERNAME_PATTERN = /^[a-z0-9._-]{3,30}$/;
+
+export const toLoginEmail = (login) => {
+  const value = login.trim().toLowerCase();
+  return value.includes('@') ? value : `${value}@${LOGIN_DOMAIN}`;
+};
+
+// The name shown in the app: the username for username accounts, the email otherwise.
+export const loginName = (email = '') =>
+  email.endsWith(`@${LOGIN_DOMAIN}`) ? email.slice(0, -LOGIN_DOMAIN.length - 1) : email;
+
+export const hasRealEmail = (email = '') => !!email && !email.endsWith(`@${LOGIN_DOMAIN}`);

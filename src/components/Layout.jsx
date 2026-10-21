@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, Menu, Loader2, AlertTriangle, X } from 'lucide-react';
+import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, KeyRound, Menu, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { ROLES } from '../lib/constants.js';
 import { cx } from './ui.jsx';
 import logo from '../assets/logo.png';
+import ChangePasswordModal from './ChangePasswordModal.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -18,6 +19,7 @@ export default function Layout() {
   const { user, isAdmin, logout } = useAuth();
   const { loading, error, clearError } = useData();
   const [open, setOpen] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -59,6 +61,14 @@ export default function Layout() {
             <p className="truncate text-sm font-medium text-white">{user.name}</p>
             <p className="text-xs text-brand-200">{ROLES[user.role].label}</p>
           </div>
+          <button
+            onClick={() => { setOpen(false); setChangingPassword(true); }}
+            className="rounded-lg p-2 text-brand-100/80 hover:bg-white/10 hover:text-white"
+            title="Change password"
+            aria-label="Change password"
+          >
+            <KeyRound size={18} />
+          </button>
           <button
             onClick={logout}
             className="rounded-lg p-2 text-brand-100/80 hover:bg-white/10 hover:text-white"
@@ -108,6 +118,7 @@ export default function Layout() {
           )}
         </main>
       </div>
+      <ChangePasswordModal open={changingPassword} onClose={() => setChangingPassword(false)} />
     </div>
   );
 }

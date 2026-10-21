@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Plus, Pencil, Mail, UserX, UserCheck, Download, Upload, Loader2 } from 'lucide-react';
+import { Plus, Pencil, KeyRound, UserX, UserCheck, Download, Upload, Loader2 } from 'lucide-react';
 import { PROGRAMS, ROLES } from '../lib/constants.js';
 import { fmtDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
+import { hasRealEmail } from '../lib/firebase.js';
 import { Button, Card, Field, Input, Modal, PageHeader, Select, cx, useConfirm } from '../components/ui.jsx';
 
 export default function UsersPage() {
@@ -11,6 +12,7 @@ export default function UsersPage() {
   const { downloadBackup } = useData();
   const confirm = useConfirm();
   const [modal, setModal] = useState(null); // null | { user?: object }
+  const [resetting, setResetting] = useState(null); // username account whose password is being reset
   const [notice, setNotice] = useState('');
 
   const tell = (msg) => confirm({ title: 'Notice', message: msg, confirmLabel: 'OK' });
@@ -33,6 +35,7 @@ export default function UsersPage() {
   };
 
   const sendReset = async (u) => {
+    if (!hasRealEmail(u.email)) return setResetting(u);
     try {
       await resetPassword(u.email);
       setNotice(`Password reset email sent to ${u.email}.`);
@@ -57,7 +60,7 @@ export default function UsersPage() {
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Username</th>
                 <th className="px-4 py-3">Role</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Added</th>
@@ -71,7 +74,7 @@ export default function UsersPage() {
                     <span className={u.active ? 'text-slate-800' : ''}>{u.name}</span>
                     {u.id === me.id && <span className="ml-1 text-xs font-normal text-slate-400">(you)</span>}
                   </td>
-                  <td className="px-4 py-3">{u.email}</td>
+                  <td className="px-4 py-3">{u.username}</td>
                   <td className="px-4 py-3">
                     <span className={cx('rounded-full px-2 py-0.5 text-xs font-medium', u.role === 'admin' ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-600')}>
                       {ROLES[u.role]?.label || u.role}
@@ -82,7 +85,9 @@ export default function UsersPage() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       <Button size="icon" variant="ghost" onClick={() => setModal({ user: u })} aria-label="Edit" title="Edit"><Pencil size={15} /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => sendReset(u)} aria-label="Send password reset email" title="Send password reset email"><Mail size={15} /></Button>
+                      {u.id !== me.id && (
+                        <Button size="icon" variant="ghost" onClick={() => sendReset(u)} aria-label="Reset password" title="Reset password"><KeyRound size={15} /></Button>
+                      )}
                       {u.id !== me.id && (
                         <Button
                           size="icon"
@@ -126,6 +131,8 @@ export default function UsersPage() {
 
       <ImportCard />
 
+      <ResetPasswordModal user={resetting} onClose={() => setResetting(null)} onDone={(u) => setNotice(`Password for ${u.username} has been reset. Share the new password privately.`)} />
+
       <UserModal
         state={modal}
         isSelf={modal?.user?.id === me.id}
@@ -147,7 +154,7 @@ function UserModal({ state, isSelf, onClose, onSave }) {
 
   if (state !== lastState) {
     setLastState(state);
-    setForm(editing ? { name: editing.name, email: editing.email, role: editing.role } : { name: '', email: '', role: 'staff', password: '' });
+    setForm(editing ? { name: editing.name, username: editing.username, role: editing.role } : { name: '', username: '', role: 'staff', password: '' });
     setError('');
   }
 
@@ -181,8 +188,8 @@ function UserModal({ state, isSelf, onClose, onSave }) {
     >
       <form id="user-form" onSubmit={submit} className="space-y-4">
         <Field label="Full name"><Input value={form.name || ''} onChange={set('name')} required autoFocus /></Field>
-        <Field label="Email" hint={editing ? 'Email can’t be changed here.' : 'They sign in with this email.'}>
-          <Input type="email" value={form.email || ''} onChange={set('email')} required disabled={!!editing} autoComplete="off" />
+        <Field label="Username" hint={editing ? 'Username can’t be changed.' : 'They sign in with this. Lowercase letters, numbers, dot, dash or underscore.'}>
+          <Input value={form.username || ''} onChange={set('username')} required disabled={!!editing} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="e.g. sinta" />
         </Field>
         <Field label="Role" hint={isSelf ? 'You can’t remove the last admin.' : undefined}>
           <Select value={form.role || 'staff'} onChange={set('role')}>
@@ -190,7 +197,7 @@ function UserModal({ state, isSelf, onClose, onSave }) {
           </Select>
         </Field>
         {!editing && (
-          <Field label="Temporary password" hint="At least 6 characters. Share it privately; they can change it with “Forgot password?”.">
+          <Field label="Temporary password" hint="At least 6 characters. Share it privately; they can change it after signing in.">
             <Input type="password" value={form.password || ''} onChange={set('password')} autoComplete="new-password" required />
           </Field>
         )}
@@ -268,5 +275,63 @@ function ImportCard() {
       {status.error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{status.error}</p>}
       {status.result && <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{status.result}</p>}
     </Card>
+  );
+}
+
+// Two-step reset for username accounts (they have no mailbox for a reset email).
+function ResetPasswordModal({ user, onClose, onDone }) {
+  const { recreateLogin } = useAuth();
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [last, setLast] = useState(null);
+
+  if (user !== last) {
+    setLast(user);
+    setPassword('');
+    setError('');
+  }
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (password.length < 6) return setError('Password must be at least 6 characters.');
+    setBusy(true);
+    try {
+      await recreateLogin(user, password);
+      onDone(user);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={!!user}
+      onClose={onClose}
+      title={`Reset password · ${user?.username}`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="reset-form" disabled={busy}>Reset password</Button>
+        </>
+      }
+    >
+      <form id="reset-form" onSubmit={submit} className="space-y-4 text-sm text-slate-600">
+        <ol className="list-decimal space-y-2 pl-5">
+          <li>
+            In the <a className="text-brand-700 underline" href="https://console.firebase.google.com/project/patient-tracker-8a04c/authentication/users" target="_blank" rel="noreferrer">Firebase console → Authentication → Users</a>,
+            find <code className="rounded bg-slate-100 px-1 text-xs">{user?.email}</code>, open its ⋮ menu and choose <b>Delete account</b>.
+          </li>
+          <li>Enter a new temporary password here and click <b>Reset password</b>. Their name and role stay the same.</li>
+        </ol>
+        <Field label="New temporary password" hint="At least 6 characters. Share it privately.">
+          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
+        </Field>
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      </form>
+    </Modal>
   );
 }

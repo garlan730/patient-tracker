@@ -6,12 +6,11 @@ import { Button, Field, Input } from '../components/ui.jsx';
 import logo from '../assets/logo.png';
 
 export default function Login() {
-  const { user, login, resetPassword, ready, authError } = useAuth();
+  const { user, login, ready, authError } = useAuth();
   const location = useLocation();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (user) return <Navigate to={location.state?.from || '/'} replace />;
@@ -19,26 +18,13 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setInfo('');
     setBusy(true);
     try {
-      await login(email, password);
+      await login(username, password);
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
-    }
-  };
-
-  const handleForgot = async () => {
-    setError('');
-    setInfo('');
-    if (!email.trim()) return setError('Enter your email first, then click "Forgot password?".');
-    try {
-      await resetPassword(email);
-      setInfo(`If ${email.trim()} has an account, a password reset email is on its way.`);
-    } catch (err) {
-      setError(err.message);
     }
   };
 
@@ -54,21 +40,18 @@ export default function Login() {
           <p className="mt-1 text-sm text-slate-500">Sign in to the Patient Tracker</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Email">
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required autoFocus />
+          <Field label="Username">
+            <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required autoFocus />
           </Field>
           <Field label="Password">
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
           </Field>
           {shownError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{shownError}</p>}
-          {info && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{info}</p>}
           <Button type="submit" className="w-full" disabled={busy || !ready}>
             {(busy || !ready) && <Loader2 size={16} className="animate-spin" />}
             Sign in
           </Button>
-          <button type="button" onClick={handleForgot} className="block w-full text-center text-sm text-slate-500 hover:text-brand-700">
-            Forgot password?
-          </button>
+          <p className="text-center text-xs text-slate-500">Forgot your password? Ask a clinic admin to reset it.</p>
         </form>
       </div>
     </div>
