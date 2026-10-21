@@ -4,14 +4,15 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #ecfdf3;
-  --color-brand-100: #d1fadf;
-  --color-brand-200: #a6f4c5;
-  --color-brand-500: #12a05a;
-  --color-brand-600: #0e8a4c;
-  --color-brand-700: #0b6e3d;
-  --color-brand-800: #0a5733;
-  --color-brand-900: #08432a;
+  /* Brand green, built around the clinic logo color #507801 (brand-700). */
+  --color-brand-50: #f0fbe6;
+  --color-brand-100: #e0f5cb;
+  --color-brand-200: #c6e8a1;
+  --color-brand-500: #6c9a26;
+  --color-brand-600: #5c8711;
+  --color-brand-700: #507801;
+  --color-brand-800: #3a5802;
+  --color-brand-900: #263a05;
 }
 
 body {

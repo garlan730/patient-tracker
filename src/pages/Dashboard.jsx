@@ -10,7 +10,7 @@ import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { Card, PageHeader, cx } from '../components/ui.jsx';
 
-const BAR = '#0e8a4c';
+const BAR = '#507801'; // brand-700, the logo green
 const AXIS = { fontSize: 11, fill: '#64748b' };
 
 export default function Dashboard() {
