@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Check, X, Stethoscope } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
-import { Button, Card, EmptyState, Input, PageHeader, useConfirm } from '../components/ui.jsx';
+import { Button, Card, EmptyState, Input, PageHeader, Textarea, useConfirm } from '../components/ui.jsx';
+
+// "Sp. Pros" and "Sp.Pros" count as the same name.
+const normalize = (n) => n.toLowerCase().replace(/\s+/g, '');
 
 export default function Doctors() {
   const { doctors, patients, addDoctor, updateDoctor, removeDoctor } = useData();
@@ -12,9 +15,11 @@ export default function Doctors() {
   const [name, setName] = useState('');
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
+  const [bulk, setBulk] = useState(null); // null = single-name mode, string = pasted list
+  const [info, setInfo] = useState('');
 
   const countFor = (id) => patients.filter((p) => p.doctorId === id && !p.archived).length;
-  const exists = (n, exceptId) => doctors.some((d) => d.id !== exceptId && d.name.toLowerCase() === n.trim().toLowerCase());
+  const exists = (n, exceptId) => doctors.some((d) => d.id !== exceptId && normalize(d.name) === normalize(n));
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -23,6 +28,24 @@ export default function Doctors() {
     addDoctor(name);
     setName('');
     setError('');
+  };
+
+  // One name per line; skips blanks, names already in the list, and repeats within the paste.
+  const handleBulkAdd = (e) => {
+    e.preventDefault();
+    const seen = new Set(doctors.map((d) => normalize(d.name)));
+    const toAdd = [];
+    let skipped = 0;
+    for (const line of bulk.split('\n')) {
+      const n = line.trim();
+      if (!n) continue;
+      if (seen.has(normalize(n))) { skipped++; continue; }
+      seen.add(normalize(n));
+      toAdd.push(n);
+    }
+    toAdd.forEach((n) => addDoctor(n));
+    setInfo(`Added ${toAdd.length} doctor${toAdd.length === 1 ? '' : 's'}${skipped ? `, skipped ${skipped} already in the list` : ''}.`);
+    setBulk(null);
   };
 
   const saveEdit = () => {
@@ -52,11 +75,27 @@ export default function Doctors() {
 
       {isAdmin && (
         <Card className="mb-4 p-4">
-          <form onSubmit={handleAdd} className="flex flex-col gap-2 sm:flex-row">
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. drg. Tegar Wijaya, Sp.KG" />
-            <Button type="submit" disabled={!name.trim()} className="shrink-0"><Plus size={16} /> Add doctor</Button>
-          </form>
+          {bulk === null ? (
+            <form onSubmit={handleAdd} className="flex flex-col gap-2 sm:flex-row">
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. drg. Tegar Wijaya, Sp.KG" />
+              <Button type="submit" disabled={!name.trim()} className="shrink-0"><Plus size={16} /> Add doctor</Button>
+            </form>
+          ) : (
+            <form onSubmit={handleBulkAdd} className="space-y-2">
+              <Textarea rows={8} value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={'One doctor per line, e.g.\ndrg. Tegar Wijaya, Sp.KG\ndrg. Sinta Rahayu, Sp.Pros'} autoFocus />
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setBulk(null)}>Cancel</Button>
+                <Button type="submit" disabled={!bulk.trim()}><Plus size={16} /> Add all</Button>
+              </div>
+            </form>
+          )}
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          {info && <p className="mt-2 text-sm text-brand-700">{info}</p>}
+          {bulk === null && (
+            <button type="button" onClick={() => { setBulk(''); setInfo(''); setError(''); }} className="mt-2 text-sm text-slate-500 hover:text-brand-700">
+              Add several at once…
+            </button>
+          )}
         </Card>
       )}
 
