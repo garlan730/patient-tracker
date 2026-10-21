@@ -8,6 +8,13 @@ npm run dev      # http://localhost:5173
 npm run build    # production build in dist/
 ```
 
+## Deploy (GitHub Pages)
+
+Pushing to `main` builds and publishes the site with `.github/workflows/deploy.yml`.
+One-time setup: repo **Settings → Pages → Source: GitHub Actions**.
+Live at https://garlan730.github.io/patient-tracker/ (the path is set by `base` in `vite.config.js`;
+change it if you rename the repo).
+
 ## Demo accounts
 
 Seeded on first run (see `SEED_USERS` in `src/lib/constants.js`):
