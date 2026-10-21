@@ -75,7 +75,7 @@ export function DataProvider({ children }) {
   const run = useCallback((promise) => promise.catch((err) => setError(friendlyError(err))), []);
   const patientRef = (id) => doc(db, 'patients', id);
 
-  const addPatient = useCallback(({ program, name, phone, doctorId, firstDate }) => {
+  const addPatient = useCallback(({ program, name, phone, doctorId, firstDate, endStep }) => {
     const firstStep = PROGRAMS[program].steps[0].id;
     return run(addDoc(collection(db, 'patients'), {
       program,
@@ -84,6 +84,7 @@ export function DataProvider({ children }) {
       doctorId,
       createdAt: new Date().toISOString(),
       archived: false,
+      endStep: endStep || null,
       steps: firstDate ? { [firstStep]: { date: firstDate, note: '' } } : {},
     }));
   }, [run]);

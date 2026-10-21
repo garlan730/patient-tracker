@@ -64,10 +64,13 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
 
         <div className="flex-1 overflow-y-auto">
           <section className="px-5 py-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Treatment timeline</h3>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Treatment timeline{pr.endsEarly && <span className="ml-1 font-normal normal-case tracking-normal">· ends at {pr.finalStep.label}</span>}
+            </h3>
             <ol className="space-y-1">
               {stepsFor(patient).map((s) => {
                 const st = patient.steps?.[s.id];
+                const skipped = !pr.inPlan(s.id) && !st?.date;
                 return (
                   <li key={s.id}>
                     <button
@@ -81,9 +84,9 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <span className={cx('text-sm', st?.date ? 'font-medium text-slate-800' : 'text-slate-500')}>{s.label}</span>
+                          <span className={cx('text-sm', st?.date ? 'font-medium text-slate-800' : skipped ? 'text-slate-300 line-through' : 'text-slate-500')}>{s.label}</span>
                           <span className="text-xs tabular-nums text-slate-500">
-                            {st?.date ? fmtDate(st.date) : pr.nextStep?.id === s.id ? 'Next' : ''}
+                            {st?.date ? fmtDate(st.date) : skipped ? 'Not needed' : pr.nextStep?.id === s.id ? 'Next' : ''}
                           </span>
                         </div>
                         {st?.note && <p className="mt-0.5 text-xs text-slate-500 whitespace-pre-line">{st.note}</p>}

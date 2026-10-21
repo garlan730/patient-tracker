@@ -1,9 +1,17 @@
 import { stepsFor } from './constants.js';
 import { toDate } from './dates.js';
 
-// Derived, read-only view of a patient's progress through their program's steps.
+// The steps this patient actually needs: their program's steps up to `endStep`
+// (a patient can finish early, e.g. after Implant), or the whole program if none is set.
+export function planFor(patient) {
+  const all = stepsFor(patient);
+  const end = all.findIndex((s) => s.id === patient.endStep);
+  return end >= 0 ? all.slice(0, end + 1) : all;
+}
+
+// Derived, read-only view of a patient's progress through their planned steps.
 export function getProgress(patient) {
-  const TREATMENT_STEPS = stepsFor(patient);
+  const TREATMENT_STEPS = planFor(patient);
   const steps = patient.steps || {};
   const done = TREATMENT_STEPS.filter((s) => steps[s.id]?.date);
   const lastIndex = TREATMENT_STEPS.reduce((acc, s, i) => (steps[s.id]?.date ? i : acc), -1);
@@ -26,6 +34,9 @@ export function getProgress(patient) {
     nextStep: status === 'completed' ? null : nextStep,
     lastActivity,
     status,
+    endsEarly: TREATMENT_STEPS.length < stepsFor(patient).length,
+    finalStep: TREATMENT_STEPS.at(-1),
+    inPlan: (stepId) => TREATMENT_STEPS.some((s) => s.id === stepId),
   };
 }
 

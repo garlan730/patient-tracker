@@ -10,7 +10,7 @@ const escape = (v) => {
 export function exportPatientsCsv(patients, doctorName, program) {
   const TREATMENT_STEPS = PROGRAMS[program].steps;
   const header = [
-    'Patient', 'Phone', 'Doctor', 'Status', 'Progress (%)', 'Last Activity',
+    'Patient', 'Phone', 'Doctor', 'Status', 'Progress (%)', 'Last Activity', 'Treatment Ends At',
     ...TREATMENT_STEPS.flatMap((s) => [s.label, `${s.label} Note`]),
     'Patient Notes',
   ];
@@ -23,6 +23,7 @@ export function exportPatientsCsv(patients, doctorName, program) {
       STATUS[pr.status].label,
       pr.percent,
       pr.lastActivity || '',
+      pr.finalStep.label,
       ...TREATMENT_STEPS.flatMap((s) => [p.steps?.[s.id]?.date || '', p.steps?.[s.id]?.note || '']),
       (p.notes || []).map((n) => `[${n.createdAt.slice(0, 10)} ${n.authorName}] ${n.text}`).join(' | '),
     ];

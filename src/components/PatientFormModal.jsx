@@ -1,28 +1,29 @@
 import { useEffect, useState } from 'react';
-import { PROGRAMS } from '../lib/constants.js';
+import { PROGRAMS, programOf } from '../lib/constants.js';
 import { useData } from '../lib/data.jsx';
 import { Button, Field, Input, Modal, Select } from './ui.jsx';
 
 // Add (patient = null) or edit an existing patient's details.
 export default function PatientFormModal({ open, patient, program = 'tanam', onClose }) {
   const { doctors, addPatient, updatePatient } = useData();
-  const [form, setForm] = useState({ program, name: '', phone: '', doctorId: '', firstDate: '' });
+  const [form, setForm] = useState({ program, name: '', phone: '', doctorId: '', firstDate: '', endStep: '' });
 
   useEffect(() => {
     if (!open) return;
     setForm(
       patient
-        ? { program, name: patient.name, phone: patient.phone || '', doctorId: patient.doctorId, firstDate: '' }
-        : { program, name: '', phone: '', doctorId: '', firstDate: '' }
+        ? { program: programOf(patient), name: patient.name, phone: patient.phone || '', doctorId: patient.doctorId, firstDate: '', endStep: patient.endStep || '' }
+        : { program, name: '', phone: '', doctorId: '', firstDate: '', endStep: '' }
     );
   }, [open, patient, program]);
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  // Step ids differ between programs, so switching program resets the end step.
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value, ...(k === 'program' ? { endStep: '' } : {}) }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.doctorId) return;
-    if (patient) updatePatient(patient.id, { name: form.name.trim(), phone: form.phone.trim(), doctorId: form.doctorId });
+    if (patient) updatePatient(patient.id, { name: form.name.trim(), phone: form.phone.trim(), doctorId: form.doctorId, endStep: form.endStep || null });
     else addPatient(form);
     onClose();
   };
@@ -58,6 +59,15 @@ export default function PatientFormModal({ open, patient, program = 'tanam', onC
             <option value="">Select a doctor…</option>
             {doctors.map((d) => (
               <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Treatment ends at" hint="Pick an earlier step if this patient doesn't need the full treatment.">
+          <Select value={form.endStep} onChange={set('endStep')}>
+            {PROGRAMS[form.program].steps.map((s, i, all) => (
+              <option key={s.id} value={i === all.length - 1 ? '' : s.id}>
+                {s.label}{i === all.length - 1 ? ' (full treatment)' : ''}
+              </option>
             ))}
           </Select>
         </Field>

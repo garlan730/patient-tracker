@@ -245,26 +245,30 @@ export default function Tracker() {
                       <div className="flex flex-col gap-1">
                         <StatusBadge status={pr.status} />
                         <ProgressBar percent={pr.percent} />
+                        {pr.endsEarly && <span className="text-[11px] text-slate-500">Ends at {pr.finalStep.label}</span>}
                       </div>
                     </Td>
                     {TREATMENT_STEPS.map((s) => {
                       const st = p.steps?.[s.id];
                       const isNext = pr.nextStep?.id === s.id;
+                      const skipped = !pr.inPlan(s.id) && !st?.date;
                       return (
                         <Td key={s.id} className="p-1 text-center">
                           <button
                             onClick={() => setStepTarget({ patient: p, stepId: s.id })}
-                            title={st?.note ? `Note: ${st.note}` : st?.date ? 'Edit date / note' : 'Set date'}
+                            title={skipped ? `Not needed — treatment ends at ${pr.finalStep.label}` : st?.note ? `Note: ${st.note}` : st?.date ? 'Edit date / note' : 'Set date'}
                             className={cx(
                               'relative w-full rounded-md px-2 py-1.5 text-xs tabular-nums transition-colors',
                               st?.date
                                 ? 'bg-brand-50 font-medium text-brand-800 hover:bg-brand-100'
-                                : isNext
+                                : skipped
+                                  ? 'bg-slate-50 text-slate-300 hover:text-slate-500'
+                                  : isNext
                                   ? 'border border-dashed border-amber-300 text-amber-600 hover:bg-amber-50'
                                   : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'
                             )}
                           >
-                            {st?.date ? fmtDate(st.date) : isNext ? 'Next' : '+'}
+                            {st?.date ? fmtDate(st.date) : skipped ? 'n/a' : isNext ? 'Next' : '+'}
                             {st?.note && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-500" />}
                           </button>
                         </Td>
