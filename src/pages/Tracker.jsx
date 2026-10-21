@@ -73,7 +73,7 @@ export default function Tracker() {
         if (programOf(p) !== program) return false;
         if (!!p.archived !== (f.archived === '1')) return false;
         if (q && ![p.name, p.phone, doctorName(p.doctorId)].some((v) => v?.toLowerCase().includes(q))) return false;
-        if (f.doctor && p.doctorId !== f.doctor) return false;
+        if (f.doctor === 'none' ? doctors.some((d) => d.id === p.doctorId) : f.doctor && p.doctorId !== f.doctor) return false;
         if (f.status && pr.status !== f.status) return false;
         if (f.stage && pr.nextStep?.id !== f.stage) return false;
         if (from || to) {
@@ -84,7 +84,7 @@ export default function Tracker() {
         return true;
       })
       .sort(SORTS[sort]?.fn || SORTS.recent.fn);
-  }, [patients, doctorName, f.q, f.doctor, f.status, f.stage, f.dateField, f.from, f.to, f.archived, sort, program]);
+  }, [patients, doctors, doctorName, f.q, f.doctor, f.status, f.stage, f.dateField, f.from, f.to, f.archived, sort, program]);
 
   const toggleArchive = (p) => updatePatient(p.id, { archived: !p.archived });
   const handleDelete = async (p) => {
@@ -158,6 +158,7 @@ export default function Tracker() {
             <FilterField label="Doctor">
               <Select value={f.doctor} onChange={(e) => setParam('doctor', e.target.value)}>
                 <option value="">All doctors</option>
+                <option value="none">Unassigned</option>
                 {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             </FilterField>

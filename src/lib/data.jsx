@@ -117,6 +117,52 @@ export function DataProvider({ children }) {
   const updateDoctor = useCallback((id, name) => run(updateDoc(doc(db, 'doctors', id), { name: name.trim() })), [run]);
   const removeDoctor = useCallback((id) => run(deleteDoc(doc(db, 'doctors', id))), [run]);
 
+  // Bulk-adds patients from an import file. Patients whose name already exists in the same
+  // program are skipped, so running the same file twice doesn't create duplicates.
+  const importPatients = useCallback(async (program, list) => {
+    const key = (n) => n.toLowerCase().replace(/\s+/g, ' ').trim();
+    const existing = new Set(patients.filter((p) => (p.program || 'tanam') === program).map((p) => key(p.name)));
+    const firstStep = PROGRAMS[program].steps[0].id;
+    const fresh = [];
+    for (const item of list) {
+      const name = item.name?.trim();
+      if (!name || existing.has(key(name))) continue;
+      existing.add(key(name));
+      fresh.push(item);
+    }
+    const now = new Date().toISOString();
+    // Firestore batches hold at most 500 writes; each patient is up to 2 (patient + note).
+    for (let i = 0; i < fresh.length; i += 200) {
+      const batch = writeBatch(db);
+      for (const item of fresh.slice(i, i + 200)) {
+        const ref = doc(collection(db, 'patients'));
+        batch.set(ref, {
+          program,
+          name: item.name.trim(),
+          phone: item.phone?.trim() || '',
+          doctorId: '',
+          createdAt: now,
+          archived: false,
+          steps: item.firstDate ? { [firstStep]: { date: item.firstDate, note: 'Imported from booking schedule' } } : {},
+        });
+        if (item.note) {
+          batch.set(doc(collection(db, 'patients', ref.id, 'notes')), {
+            text: item.note,
+            authorId: user.id,
+            authorName: user.name,
+            createdAt: now,
+          });
+        }
+      }
+      try {
+        await batch.commit();
+      } catch (err) {
+        throw new Error(friendlyError(err));
+      }
+    }
+    return { added: fresh.length, skipped: list.length - fresh.length };
+  }, [patients, user]);
+
   const doctorName = useCallback(
     (id) => doctors.find((d) => d.id === id)?.name || 'Unassigned',
     [doctors]
@@ -157,6 +203,7 @@ export function DataProvider({ children }) {
     updateDoctor,
     removeDoctor,
     downloadBackup,
+    importPatients,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

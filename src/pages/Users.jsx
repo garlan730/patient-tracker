@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Plus, Pencil, Mail, UserX, UserCheck, Download } from 'lucide-react';
-import { ROLES } from '../lib/constants.js';
+import { Plus, Pencil, Mail, UserX, UserCheck, Download, Upload, Loader2 } from 'lucide-react';
+import { PROGRAMS, ROLES } from '../lib/constants.js';
 import { fmtDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
@@ -124,6 +124,8 @@ export default function UsersPage() {
         <Button variant="secondary" size="sm" className="mt-3" onClick={downloadBackup}><Download size={14} /> Download backup</Button>
       </Card>
 
+      <ImportCard />
+
       <UserModal
         state={modal}
         isSelf={modal?.user?.id === me.id}
@@ -195,5 +197,76 @@ function UserModal({ state, isSelf, onClose, onSave }) {
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </form>
     </Modal>
+  );
+}
+
+// Reads a patient import file ({ format: 'patient-tracker-import', program, patients: [{ name, firstDate?, phone?, note? }] }),
+// shows what will happen, then adds the patients.
+function ImportCard() {
+  const { importPatients } = useData();
+  const [file, setFile] = useState(null); // { name, program, patients }
+  const [status, setStatus] = useState({ busy: false, error: '', result: '' });
+
+  const pick = async (e) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    setStatus({ busy: false, error: '', result: '' });
+    setFile(null);
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (data.format !== 'patient-tracker-import' || !PROGRAMS[data.program] || !Array.isArray(data.patients)) {
+        throw new Error('This is not a patient import file.');
+      }
+      setFile({ name: f.name, program: data.program, source: data.source, patients: data.patients });
+    } catch (err) {
+      setStatus({ busy: false, error: err instanceof SyntaxError ? 'Could not read the file (invalid JSON).' : err.message, result: '' });
+    }
+  };
+
+  const run = async () => {
+    setStatus({ busy: true, error: '', result: '' });
+    try {
+      const { added, skipped } = await importPatients(file.program, file.patients);
+      setStatus({ busy: false, error: '', result: `Imported ${added} patient${added === 1 ? '' : 's'}${skipped ? `; skipped ${skipped} already in the tracker` : ''}.` });
+      setFile(null);
+    } catch (err) {
+      setStatus({ busy: false, error: err.message, result: '' });
+    }
+  };
+
+  const withDate = file?.patients.filter((p) => p.firstDate).length || 0;
+  const withNote = file?.patients.filter((p) => p.note).length || 0;
+
+  return (
+    <Card className="mt-6 p-4">
+      <h2 className="text-sm font-semibold text-slate-900">Import patients</h2>
+      <p className="mt-1 text-sm text-slate-600">Add many patients at once from an import file. Patients already in the tracker (same name) are skipped.</p>
+      {file ? (
+        <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+          <p className="font-medium">{file.name}</p>
+          {file.source && <p className="text-xs text-slate-500">{file.source}</p>}
+          <ul className="mt-2 list-disc pl-5 text-slate-600">
+            <li>{file.patients.length} patients → {PROGRAMS[file.program].label}</li>
+            <li>{withDate} with a {PROGRAMS[file.program].steps[0].label} date</li>
+            <li>{withNote} with a note</li>
+            <li>No doctor assigned — set it later by editing each patient</li>
+          </ul>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" onClick={run} disabled={status.busy}>
+              {status.busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Import {file.patients.length} patients
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setFile(null)} disabled={status.busy}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
+        <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50">
+          <Upload size={14} /> Choose import file…
+          <input type="file" accept=".json,application/json" className="hidden" onChange={pick} />
+        </label>
+      )}
+      {status.error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{status.error}</p>}
+      {status.result && <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{status.result}</p>}
+    </Card>
   );
 }
