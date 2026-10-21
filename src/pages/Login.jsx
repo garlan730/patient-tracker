@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Activity, Loader2 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { Button, Field, Input } from '../components/ui.jsx';
 
 export default function Login() {
-  const { user, login, ready } = useAuth();
-  const navigate = useNavigate();
+  const { user, login, resetPassword, ready, authError } = useAuth();
   const location = useLocation();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (user) return <Navigate to={location.state?.from || '/'} replace />;
@@ -18,16 +18,30 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInfo('');
     setBusy(true);
     try {
-      await login(username, password);
-      navigate(location.state?.from || '/', { replace: true });
+      await login(email, password);
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
     }
   };
+
+  const handleForgot = async () => {
+    setError('');
+    setInfo('');
+    if (!email.trim()) return setError('Enter your email first, then click "Forgot password?".');
+    try {
+      await resetPassword(email);
+      setInfo(`If ${email.trim()} has an account, a password reset email is on its way.`);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const shownError = error || authError;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 p-4">
@@ -40,17 +54,21 @@ export default function Login() {
           <p className="mt-1 text-sm text-slate-500">Sign in to the Patient Tracker</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Username">
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required autoFocus />
+          <Field label="Email">
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required autoFocus />
           </Field>
           <Field label="Password">
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
           </Field>
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {shownError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{shownError}</p>}
+          {info && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{info}</p>}
           <Button type="submit" className="w-full" disabled={busy || !ready}>
-            {busy && <Loader2 size={16} className="animate-spin" />}
+            {(busy || !ready) && <Loader2 size={16} className="animate-spin" />}
             Sign in
           </Button>
+          <button type="button" onClick={handleForgot} className="block w-full text-center text-sm text-slate-500 hover:text-brand-700">
+            Forgot password?
+          </button>
         </form>
       </div>
     </div>

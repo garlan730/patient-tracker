@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "date-fns": "^4.4.0",
+    "firebase": "^13.1.0",
     "lucide-react": "^1.61.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -21,5 +22,8 @@
     "@vitejs/plugin-react": "^6.1.2",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.5"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6"
   }
 }

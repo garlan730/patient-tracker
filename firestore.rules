@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// Paste into Firebase console → Firestore Database → Rules, then Publish.
+// Access requires a Firebase Auth login AND an active users/{uid} document.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isActive() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && profile().active == true;
+    }
+    function isAdmin() {
+      return isActive() && profile().role == 'admin';
+    }
+
+    // Staff accounts. Everyone can read their own profile (the app needs it to know their role);
+    // only admins can see the list or add/change users. Nobody deletes profiles from the app.
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if isAdmin()
+        && request.resource.data.role in ['admin', 'staff']
+        && request.resource.data.active is bool;
+      allow delete: if false;
+    }
+
+    match /doctors/{doctorId} {
+      allow read: if isActive();
+      allow write: if isAdmin()
+        && (request.resource == null || request.resource.data.name is string);
+    }
+
+    match /patients/{patientId} {
+      allow read: if isActive();
+      allow create, update: if isActive()
+        && request.resource.data.name is string
+        && request.resource.data.program in ['tanam', 'internal'];
+      allow delete: if isAdmin();
+
+      // Notes can't be edited; only their author or an admin can delete them.
+      match /notes/{noteId} {
+        allow read: if isActive();
+        allow create: if isActive()
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.text is string;
+        allow update: if false;
+        allow delete: if isAdmin() || (isActive() && resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    // Lets the app load every patient's notes in one query (collection group).
+    match /{path=**}/notes/{noteId} {
+      allow read: if isActive();
+    }
+  }
+}

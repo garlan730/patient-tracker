@@ -1,124 +1,141 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { SEED_USERS } from './constants.js';
-import { load, save, remove, uid } from './storage.js';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { deleteApp, initializeApp } from 'firebase/app';
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { collection, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { auth, db, firebaseConfig, friendlyError } from './firebase.js';
 
-// Local demo authentication: users live in localStorage with salted SHA-256 password hashes.
-// Swap this provider for a real backend (Supabase, Firebase, your API) before storing real patient data.
+// Sign-in is Firebase Auth (email + password). Each person also needs a `users/{uid}` document
+// with { name, email, role, active } — that is what grants access and decides admin vs staff.
 
-const SESSION_HOURS = 8;
 const AuthContext = createContext(null);
 
-async function hashPassword(password, salt) {
-  const bytes = new TextEncoder().encode(`${salt}:${password}`);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function makeUser({ id, username, name, role, password }) {
-  const salt = crypto.getRandomValues(new Uint32Array(2)).join('');
-  return {
-    id: id || uid('u'),
-    username: username.trim().toLowerCase(),
-    name: name.trim(),
-    role,
-    salt,
-    passwordHash: await hashPassword(password, salt),
-    createdAt: new Date().toISOString(),
-  };
-}
-
-const publicUser = ({ salt, passwordHash, ...rest }) => rest;
-
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useState(() => load('users', null));
-  const [session, setSession] = useState(() => load('session', null));
+  const [authUser, setAuthUser] = useState(undefined); // undefined while Firebase restores the session
+  const [profile, setProfile] = useState(undefined);
+  const [users, setUsers] = useState([]);
+  const [authError, setAuthError] = useState('');
+
+  useEffect(
+    () =>
+      onAuthStateChanged(auth, (u) => {
+        setAuthUser(u);
+        if (!u) setProfile(null);
+      }),
+    []
+  );
+
+  // Watch the signed-in person's profile so deactivation or role changes apply immediately.
+  useEffect(() => {
+    if (!authUser) return;
+    setProfile(undefined);
+    return onSnapshot(
+      doc(db, 'users', authUser.uid),
+      (snap) => {
+        const data = snap.exists() ? { id: snap.id, email: authUser.email, ...snap.data() } : null;
+        if (!data || !data.active) {
+          setAuthError(
+            data
+              ? 'Your account has been deactivated. Contact an admin.'
+              : 'This account has no access to the Patient Tracker yet. Ask an admin to add you.'
+          );
+          setProfile(null);
+          signOut(auth);
+          return;
+        }
+        setProfile(data);
+      },
+      (err) => {
+        setAuthError(friendlyError(err));
+        setProfile(null);
+        signOut(auth);
+      }
+    );
+  }, [authUser]);
+
+  const isAdmin = profile?.role === 'admin';
 
   useEffect(() => {
-    if (users) return;
-    Promise.all(SEED_USERS.map(makeUser)).then((seeded) => {
-      setUsers(seeded);
-      save('users', seeded);
-    });
-  }, [users]);
+    if (!isAdmin) {
+      setUsers([]);
+      return;
+    }
+    return onSnapshot(collection(db, 'users'), (snap) =>
+      setUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name)))
+    );
+  }, [isAdmin]);
 
-  const persistUsers = useCallback((next) => {
-    setUsers(next);
-    save('users', next);
+  const login = useCallback(async (email, password) => {
+    setAuthError('');
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+    } catch (err) {
+      throw new Error(friendlyError(err));
+    }
   }, []);
 
-  const sessionValid = session && new Date(session.expiresAt) > new Date();
-  const currentUser = useMemo(() => {
-    if (!sessionValid || !users) return null;
-    const u = users.find((x) => x.id === session.userId);
-    return u ? publicUser(u) : null;
-  }, [sessionValid, session, users]);
+  const logout = useCallback(() => signOut(auth), []);
 
-  const login = useCallback(
-    async (username, password) => {
-      const u = users?.find((x) => x.username === username.trim().toLowerCase());
-      if (!u || (await hashPassword(password, u.salt)) !== u.passwordHash) {
-        throw new Error('Invalid username or password.');
+  const resetPassword = useCallback(async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+    } catch (err) {
+      throw new Error(friendlyError(err));
+    }
+  }, []);
+
+  // Creating a login from the browser would normally sign the admin out, so it runs on a
+  // short-lived second Firebase app instance instead.
+  const addUser = useCallback(async ({ name, email, role, password }) => {
+    const secondary = initializeApp(firebaseConfig, `add-user-${Date.now()}`);
+    try {
+      const cred = await createUserWithEmailAndPassword(getAuth(secondary), email.trim(), password);
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        role,
+        active: true,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      throw new Error(friendlyError(err));
+    } finally {
+      await deleteApp(secondary);
+    }
+  }, []);
+
+  const updateUser = useCallback(
+    async (id, changes) => {
+      const next = users.map((u) => (u.id === id ? { ...u, ...changes } : u));
+      if (!next.some((u) => u.role === 'admin' && u.active)) {
+        throw new Error('At least one active admin is required.');
       }
-      const s = {
-        userId: u.id,
-        expiresAt: new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString(),
-      };
-      setSession(s);
-      save('session', s);
+      try {
+        await updateDoc(doc(db, 'users', id), changes);
+      } catch (err) {
+        throw new Error(friendlyError(err));
+      }
     },
     [users]
   );
 
-  const logout = useCallback(() => {
-    setSession(null);
-    remove('session');
-  }, []);
-
-  const addUser = useCallback(
-    async (data) => {
-      if (users.some((u) => u.username === data.username.trim().toLowerCase())) {
-        throw new Error('That username is already taken.');
-      }
-      persistUsers([...users, await makeUser(data)]);
-    },
-    [users, persistUsers]
-  );
-
-  const updateUser = useCallback(
-    async (id, { name, role, password }) => {
-      const next = await Promise.all(
-        users.map(async (u) => {
-          if (u.id !== id) return u;
-          const updated = { ...u, name: name ?? u.name, role: role ?? u.role };
-          if (password) updated.passwordHash = await hashPassword(password, u.salt);
-          return updated;
-        })
-      );
-      if (!next.some((u) => u.role === 'admin')) throw new Error('At least one admin is required.');
-      persistUsers(next);
-    },
-    [users, persistUsers]
-  );
-
-  const deleteUser = useCallback(
-    (id) => {
-      const next = users.filter((u) => u.id !== id);
-      if (!next.some((u) => u.role === 'admin')) throw new Error('At least one admin is required.');
-      persistUsers(next);
-    },
-    [users, persistUsers]
-  );
-
   const value = {
-    ready: !!users,
-    user: currentUser,
-    isAdmin: currentUser?.role === 'admin',
-    users: (users || []).map(publicUser),
+    ready: authUser !== undefined && (authUser === null || profile !== undefined),
+    user: profile || null,
+    isAdmin,
+    users,
+    authError,
     login,
     logout,
+    resetPassword,
     addUser,
     updateUser,
-    deleteUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, Menu, Activity } from 'lucide-react';
+import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, Menu, Activity, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
+import { useData } from '../lib/data.jsx';
 import { ROLES } from '../lib/constants.js';
 import { cx } from './ui.jsx';
 
@@ -14,6 +15,7 @@ const NAV = [
 
 export default function Layout() {
   const { user, isAdmin, logout } = useAuth();
+  const { loading, error, clearError } = useData();
   const [open, setOpen] = useState(false);
 
   const sidebar = (
@@ -87,7 +89,20 @@ export default function Layout() {
           <span className="text-sm font-semibold text-slate-800">Baruga Medical Center</span>
         </header>
         <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <Outlet />
+          {error && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <span className="flex-1">{error}</span>
+              <button onClick={clearError} aria-label="Dismiss" className="text-red-400 hover:text-red-700"><X size={16} /></button>
+            </div>
+          )}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-24 text-sm text-slate-400">
+              <Loader2 size={18} className="animate-spin" /> Loading patients…
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
     </div>
