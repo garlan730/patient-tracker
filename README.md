@@ -45,6 +45,10 @@ Sign-in uses **Firebase Authentication** with a **username + password** and data
 - **Patient panel** — timeline + timestamped note log with author
 - **Filters** — search, doctor, status, next step, date range on any step or last activity, archived; sort; filters live in the URL so views can be bookmarked
 - **Edit / archive / delete** patients
+- **Inventory** — stock list with low-stock flags (also on the dashboard), stock updates (used / received /
+  count correction) with full history, and material requests that open WhatsApp with the request filled in.
+  Requests are tracked Requested → Ordered → Received; marking Received adds the quantities to stock. Admins set
+  up items and the WhatsApp number (bottom of Inventory → Stock).
 - **Export CSV** (opens in Excel) of the current filtered view
 
 ## Data & security

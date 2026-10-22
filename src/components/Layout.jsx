@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Table2, Stethoscope, Users, LogOut, KeyRound, Menu, Loader2, AlertTriangle, X } from 'lucide-react';
+import { LayoutDashboard, Table2, Stethoscope, Package, Users, LogOut, KeyRound, Menu, Loader2, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { ROLES } from '../lib/constants.js';
@@ -11,6 +11,7 @@ import ChangePasswordModal from './ChangePasswordModal.jsx';
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/tracker', label: 'Patient Tracker', icon: Table2 },
+  { to: '/inventory', label: 'Inventory', icon: Package },
   { to: '/doctors', label: 'Doctors', icon: Stethoscope },
   { to: '/users', label: 'Users', icon: Users, adminOnly: true },
 ];

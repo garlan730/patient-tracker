@@ -2,12 +2,13 @@ import { useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
-import { Users, Clock, CheckCircle2, UserPlus, CalendarCheck, MessageSquare, ArrowRight } from 'lucide-react';
+import { Users, Clock, CheckCircle2, UserPlus, CalendarCheck, MessageSquare, ArrowRight, AlertTriangle } from 'lucide-react';
 import { PROGRAMS, programOf, stepsFor } from '../lib/constants.js';
 import { getProgress } from '../lib/patients.js';
 import { daysSince, fmtDate, fmtDateTime, toDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
+import { useInventory } from '../lib/inventory.jsx';
 import { Card, PageHeader, cx } from '../components/ui.jsx';
 
 const BAR = '#507801'; // brand-700, the logo green
@@ -16,6 +17,7 @@ const AXIS = { fontSize: 11, fill: '#64748b' };
 export default function Dashboard() {
   const { patients, doctors, doctorName } = useData();
   const { user } = useAuth();
+  const { lowStock } = useInventory();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const program = PROGRAMS[params.get('program')] ? params.get('program') : 'tanam';
@@ -95,6 +97,20 @@ export default function Dashboard() {
           </div>
         }
       />
+
+      {lowStock.length > 0 && (
+        <Link
+          to="/inventory"
+          className="mb-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800 hover:bg-red-100"
+        >
+          <AlertTriangle size={16} className="shrink-0" />
+          <span className="flex-1">
+            <b>{lowStock.length} material{lowStock.length === 1 ? ' is' : 's are'} low on stock:</b>{' '}
+            {lowStock.slice(0, 3).map((i) => i.name).join(', ')}{lowStock.length > 3 ? '…' : ''}
+          </span>
+          <ArrowRight size={14} />
+        </Link>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Kpi icon={Users} label="Active patients" value={stats.total} to={trackerUrl()} />

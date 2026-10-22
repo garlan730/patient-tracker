@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Tracker from './pages/Tracker.jsx';
 import Doctors from './pages/Doctors.jsx';
 import UsersPage from './pages/Users.jsx';
+import Inventory from './pages/Inventory.jsx';
 
 function RequireAuth({ children, adminOnly }) {
   const { ready, user, isAdmin } = useAuth();
@@ -33,6 +34,7 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="tracker" element={<Tracker />} />
           <Route path="doctors" element={<Doctors />} />
+          <Route path="inventory" element={<Inventory />} />
           <Route path="users" element={<RequireAuth adminOnly><UsersPage /></RequireAuth>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
