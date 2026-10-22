@@ -11,6 +11,7 @@ import {
   runTransaction,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { db, friendlyError } from './firebase.js';
@@ -36,7 +37,8 @@ export const REQUEST_STATUS = {
   cancelled: { label: 'Cancelled', className: 'bg-slate-100 text-slate-500 ring-slate-200' },
 };
 
-export const isLow = (item) => item.stock <= (item.minStock || 0);
+// Items without a minimum (0) are never flagged, so a freshly imported list isn't all red.
+export const isLow = (item) => (item.minStock || 0) > 0 && item.stock <= item.minStock;
 
 // "0812-3456-7890", "+62 812…" and "812…" all become "6281234567890" for wa.me links.
 export function normalizeWhatsapp(input = '') {
@@ -129,6 +131,38 @@ export function InventoryProvider({ children }) {
     }
   }), [wrap, user]);
 
+  // Adds items from an import file ({ format: 'inventory-import', items: [...] }); names already
+  // in the inventory are skipped.
+  const importItems = useCallback((list) => wrap(async () => {
+    const key = (n) => n.toLowerCase().replace(/\s+/g, ' ').trim();
+    const existing = new Set(items.map((i) => key(i.name)));
+    const fresh = list.filter((it) => it.name?.trim() && !existing.has(key(it.name)) && existing.add(key(it.name)));
+    const at = new Date().toISOString();
+    for (let i = 0; i < fresh.length; i += 200) {
+      const batch = writeBatch(db);
+      for (const it of fresh.slice(i, i + 200)) {
+        const ref = doc(collection(db, 'inventory'));
+        const stock = Math.max(0, Number(it.stock) || 0);
+        batch.set(ref, {
+          name: it.name.trim(),
+          category: it.category?.trim() || '',
+          unit: it.unit?.trim() || 'pcs',
+          minStock: Math.max(0, Number(it.minStock) || 0),
+          stock,
+          updatedAt: at,
+          updatedBy: user.name,
+        });
+        if (stock) {
+          batch.set(doc(collection(db, 'inventory', ref.id, 'history')), {
+            change: stock, stockAfter: stock, reason: 'correction', note: 'Imported', by: user.name, byId: user.id, at,
+          });
+        }
+      }
+      await batch.commit();
+    }
+    return { added: fresh.length, skipped: list.length - fresh.length };
+  }), [wrap, items, user]);
+
   const deleteItem = useCallback((id) => wrap(() => deleteDoc(doc(db, 'inventory', id))), [wrap]);
 
   // reason "correction" sets the stock to `amount`; "used"/"received" subtract/add it.
@@ -210,6 +244,7 @@ export function InventoryProvider({ children }) {
     requests,
     settings,
     saveItem,
+    importItems,
     deleteItem,
     adjustStock,
     loadHistory,

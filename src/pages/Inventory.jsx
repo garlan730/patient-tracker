@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  AlertTriangle, History, Loader2, MessageCircle, Minus, Package, Pencil, Plus, Search, Send, Trash2, X,
+  AlertTriangle, History, Loader2, MessageCircle, Minus, Package, Pencil, Plus, Search, Send, Trash2, Upload, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import {
@@ -173,6 +173,7 @@ function StockTab({ onRequest }) {
       </Card>
 
       {isAdmin && <WhatsappSettings />}
+      {isAdmin && <ImportItems />}
 
       <ItemModal item={editing} categories={categories} onClose={() => setEditing(null)} />
       <AdjustModal item={adjusting} onClose={() => setAdjusting(null)} />
@@ -227,7 +228,7 @@ function ItemModal({ item, categories, onClose }) {
           <Field label="Unit"><Input value={form.unit || ''} onChange={set('unit')} placeholder="pcs, box, ml…" required /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Minimum stock" hint="At or below this, it's flagged as low.">
+          <Field label="Minimum stock" hint="At or below this, it's flagged as low. 0 = no alert.">
             <Input type="number" min="0" value={form.minStock} onChange={set('minStock')} required />
           </Field>
           {isNew && (
@@ -386,6 +387,67 @@ function WhatsappSettings() {
         <Button type="submit" variant="secondary">Save number</Button>
       </form>
       {saved && <p className="mt-2 text-sm text-brand-700">{saved}</p>}
+    </Card>
+  );
+}
+
+function ImportItems() {
+  const { importItems } = useInventory();
+  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState({ busy: false, error: '', result: '' });
+
+  const pick = async (e) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    setFile(null);
+    setStatus({ busy: false, error: '', result: '' });
+    if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (data.format !== 'inventory-import' || !Array.isArray(data.items)) throw new Error('This is not an inventory import file.');
+      setFile({ name: f.name, source: data.source, items: data.items });
+    } catch (err) {
+      setStatus({ busy: false, error: err instanceof SyntaxError ? 'Could not read the file (invalid JSON).' : err.message, result: '' });
+    }
+  };
+
+  const run = async () => {
+    setStatus({ busy: true, error: '', result: '' });
+    try {
+      const { added, skipped } = await importItems(file.items);
+      setStatus({ busy: false, error: '', result: `Imported ${added} item${added === 1 ? '' : 's'}${skipped ? `; skipped ${skipped} already in the list` : ''}.` });
+      setFile(null);
+    } catch (err) {
+      setStatus({ busy: false, error: err.message, result: '' });
+    }
+  };
+
+  const categories = file ? new Set(file.items.map((i) => i.category).filter(Boolean)).size : 0;
+
+  return (
+    <Card className="mt-6 p-4">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Upload size={16} /> Import items</h2>
+      <p className="mt-1 text-sm text-slate-600">Add many materials at once from an import file. Names already in the list are skipped.</p>
+      {file ? (
+        <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+          <p className="font-medium">{file.name}</p>
+          {file.source && <p className="text-xs text-slate-500">{file.source}</p>}
+          <p className="mt-1 text-slate-600">{file.items.length} items in {categories} categories.</p>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" onClick={run} disabled={status.busy}>
+              {status.busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Import {file.items.length} items
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setFile(null)} disabled={status.busy}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
+        <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50">
+          <Upload size={14} /> Choose import file…
+          <input type="file" accept=".json,application/json" className="hidden" onChange={pick} />
+        </label>
+      )}
+      {status.error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{status.error}</p>}
+      {status.result && <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{status.result}</p>}
     </Card>
   );
 }
