@@ -156,18 +156,20 @@ export default function Tracker() {
             <Input className="pl-9" placeholder={t('Search by patient, phone or doctor…')} value={f.q} onChange={(e) => setParam('q', e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <Select className="md:w-64" value={sort} onChange={(e) => setParam('sort', e.target.value === 'recent' ? '' : e.target.value)} aria-label={t('Sort by')}>
+            <Select className="min-w-0 flex-1 md:w-64 md:flex-none" value={sort} onChange={(e) => setParam('sort', e.target.value === 'recent' ? '' : e.target.value)} aria-label={t('Sort by')}>
               {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{t(s.label)}</option>)}
             </Select>
-            <Button
-              variant={showDates ? 'primary' : 'secondary'}
-              className="hidden md:inline-flex"
-              onClick={() => setParam('view', showDates ? '' : 'dates')}
-              aria-pressed={showDates}
-              title={t("Show every step's date in its own column")}
-            >
-              <CalendarDays size={16} /> {showDates ? t('Hide dates') : t('Show dates')}
-            </Button>
+            {/* Phones show cards, so the date-columns switch only appears on wider screens. */}
+            <div className="hidden md:block">
+              <Button
+                variant={showDates ? 'primary' : 'secondary'}
+                onClick={() => setParam('view', showDates ? '' : 'dates')}
+                aria-pressed={showDates}
+                title={t("Show every step's date in its own column")}
+              >
+                <CalendarDays size={16} /> {showDates ? t('Hide dates') : t('Show dates')}
+              </Button>
+            </div>
             <Button variant={showFilters ? 'primary' : 'secondary'} onClick={() => setShowFilters((s) => !s)}>
               <SlidersHorizontal size={16} /> {t('Filters')}
               {activeFilterCount > 0 && (
@@ -353,7 +355,7 @@ export default function Tracker() {
                                   : skipped
                                     ? 'bg-slate-50 text-slate-300 hover:text-slate-500'
                                     : isNext
-                                      ? 'border border-dashed border-amber-300 text-amber-600 hover:bg-amber-50'
+                                      ? 'border border-orange-400 bg-orange-50 font-medium text-orange-700 hover:bg-orange-100'
                                       : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'
                               )}
                             >
@@ -384,7 +386,7 @@ export default function Tracker() {
       <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
         <span>{t('Tap a patient to see their timeline and notes. Tap a step in the bar to set its date or add a note.')}</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-brand-600" /> {t('done')}</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-amber-100 ring-2 ring-inset ring-amber-400" /> {t('next')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-orange-500 outline outline-2 outline-offset-2 outline-orange-400" /> {t('next')}</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full border border-dashed border-slate-300" /> {t('not needed')}</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> {t('has note')}</span>
         <span>{t('Waiting turns amber after {warn} days and red after {alert}.', { warn: WAITING_DAYS.warn, alert: WAITING_DAYS.alert })}</span>

@@ -31,7 +31,8 @@ export function WaitingBadge({ days, compact }) {
   );
 }
 
-// One segment per step: green = done, amber ring = next, light grey = later, dashed = not needed.
+// One segment per step: green = done, orange with a ring = next, light grey = later, dashed = not needed.
+// The ring matters: some colour-blind users can't tell this orange from the green.
 // Each segment is a button that opens that step's date/note editor.
 export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
   const steps = stepsFor(patient);
@@ -57,7 +58,7 @@ export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
               className={cx(
                 'relative block w-full rounded-full transition-transform group-hover/seg:scale-y-150',
                 size === 'lg' ? 'h-2.5' : 'h-2',
-                done ? 'bg-brand-600' : next ? 'bg-amber-100 ring-2 ring-inset ring-amber-400' : skipped ? 'border border-dashed border-slate-300 bg-transparent' : 'bg-slate-200'
+                done ? 'bg-brand-600' : next ? 'bg-orange-500 outline outline-2 outline-offset-2 outline-orange-400' : skipped ? 'border border-dashed border-slate-300 bg-transparent' : 'bg-slate-200'
               )}
             >
               {st?.note && <span className="absolute -top-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-amber-500" />}
@@ -70,7 +71,7 @@ export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
 }
 
 // Text under the strip, in the same order and colours as the bar: done (green) on the left,
-// what's next (amber) on the right.
+// what's next (orange) on the right.
 export function ProgressSummary({ progress }) {
   const { status, nextStep, lastStep, completed, total } = progress;
   return (
@@ -83,7 +84,7 @@ export function ProgressSummary({ progress }) {
       {status === 'completed' ? (
         <span className="font-medium text-brand-700">{t('Completed')}</span>
       ) : (
-        <span className="text-amber-700">{t('Next:')} <span className="font-semibold">{nextStep?.label}</span></span>
+        <span className="text-orange-700">{t('Next:')} <span className="font-semibold">{nextStep?.label}</span></span>
       )}
     </div>
   );

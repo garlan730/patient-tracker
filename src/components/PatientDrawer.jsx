@@ -81,7 +81,7 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
                       {st?.date ? (
                         <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-brand-600" />
                       ) : (
-                        <Circle size={18} className={cx('mt-0.5 shrink-0', pr.nextStep?.id === s.id ? 'text-amber-500' : 'text-slate-300')} />
+                        <Circle size={18} className={cx('mt-0.5 shrink-0', pr.nextStep?.id === s.id ? 'text-orange-500' : 'text-slate-300')} />
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
