@@ -17,7 +17,7 @@ export const TREATMENT_STEPS = [
 ];
 
 // Denture steps. Staff pick the next step from this list (the program is `flexible`), so the order
-// here is only the usual order used for suggestions. Ids anatomic/vertical/sent_lab/placement are kept
+// here is only the usual order used for suggestions. Ids anatomic/vertical/sent_lab/arrived/placement are kept
 // from the earlier 5-step list so existing dates still show.
 export const INTERNAL_STEPS = [
   { id: 'consultation', get label() { return t('Consultation'); } },
@@ -26,6 +26,7 @@ export const INTERNAL_STEPS = [
   { id: 'vertical', get label() { return t('Bite (Vertical Dim.)'); } },
   { id: 'tryin', get label() { return t('Try-in'); } },
   { id: 'sent_lab', get label() { return t('Sent to Lab'); } },
+  { id: 'arrived', get label() { return t('Arrived at Clinic'); } },
   { id: 'placement', get label() { return t('Insertion'); } },
   { id: 'control1', get label() { return t('Control 1'); } },
   { id: 'control2', get label() { return t('Control 2'); } },
