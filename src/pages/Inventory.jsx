@@ -463,12 +463,13 @@ function RequestModal({ lines, onClose }) {
 
   useEffect(() => {
     if (!lines) return;
-    setRows(lines.length ? lines.map((l) => ({ ...l, qty: String(l.qty) })) : [{ itemId: '', qty: '1' }]);
+    setRows(lines.map((l) => ({ ...l, qty: String(l.qty) })));
     setNote('');
     setError('');
   }, [lines]);
 
   const update = (i, changes) => setRows((r) => r.map((row, j) => (j === i ? { ...row, ...changes } : row)));
+  const add = (it) => setRows((r) => [...r, { itemId: it.id, qty: String(isLow(it) ? Math.max(1, it.minStock * 2 - it.stock) : 1) }]);
   const number = settings.whatsappNumber;
 
   const submit = (e) => {
@@ -495,30 +496,40 @@ function RequestModal({ lines, onClose }) {
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" form="request-form"><Send size={14} /> Send on WhatsApp</Button></>}
     >
       <form id="request-form" onSubmit={submit} className="space-y-3">
-        {rows.map((row, i) => {
-          const it = items.find((x) => x.id === row.itemId);
-          return (
-            <div key={i} className="flex items-end gap-2">
-              <Field label={i === 0 ? 'Material' : ''}>
-                <Select value={row.itemId} onChange={(e) => update(i, { itemId: e.target.value })}>
-                  <option value="">Choose…</option>
-                  {items.map((x) => (
-                    <option key={x.id} value={x.id}>{x.name} ({x.stock} {x.unit}{isLow(x) ? ', low' : ''})</option>
-                  ))}
-                </Select>
-              </Field>
-              <div className="w-24 shrink-0">
-                <Field label={i === 0 ? 'Qty' : ''}>
-                  <Input type="number" min="1" value={row.qty} onChange={(e) => update(i, { qty: e.target.value })} aria-label={it ? `Quantity in ${it.unit}` : 'Quantity'} />
-                </Field>
-              </div>
-              <Button size="icon" variant="ghost" aria-label="Remove line" onClick={() => setRows((r) => r.filter((_, j) => j !== i))} disabled={rows.length === 1}>
-                <X size={16} />
-              </Button>
-            </div>
-          );
-        })}
-        <Button size="sm" variant="ghost" onClick={() => setRows((r) => [...r, { itemId: '', qty: '1' }])}><Plus size={14} /> Add line</Button>
+        <MaterialSearch items={items} exclude={rows.map((r) => r.itemId)} onPick={add} />
+        {rows.length > 0 ? (
+          <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+            {rows.map((row, i) => {
+              const it = items.find((x) => x.id === row.itemId);
+              if (!it) return null;
+              return (
+                <li key={row.itemId} className="flex items-center gap-2 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-800">{it.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {it.category || 'No category'} · {it.stock} {it.unit} in stock
+                      {isLow(it) && <span className="text-red-600"> · low</span>}
+                    </p>
+                  </div>
+                  <Input
+                    type="number"
+                    min="1"
+                    className="w-20 shrink-0"
+                    value={row.qty}
+                    onChange={(e) => update(i, { qty: e.target.value })}
+                    aria-label={`Quantity of ${it.name} in ${it.unit}`}
+                  />
+                  <span className="w-12 shrink-0 text-xs text-slate-500">{it.unit}</span>
+                  <Button size="icon" variant="ghost" aria-label={`Remove ${it.name}`} onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>
+                    <X size={16} />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400">Search above to add materials.</p>
+        )}
         <Field label="Note" hint="Optional — e.g. urgent, needed by Friday.">
           <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
@@ -528,6 +539,81 @@ function RequestModal({ lines, onClose }) {
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </form>
     </Modal>
+  );
+}
+
+// Search box that lists matching materials as you type; picking one adds it to the request.
+// Every word typed must appear in the name or category, in any order ("putty bahan" finds "Bahan cetak putty").
+function MaterialSearch({ items, exclude, onPick }) {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const matches = items
+    .filter((it) => !exclude.includes(it.id))
+    .filter((it) => words.every((w) => `${it.name} ${it.category}`.toLowerCase().includes(w)))
+    .sort((a, b) => Number(isLow(b)) - Number(isLow(a)) || a.name.localeCompare(b.name))
+    .slice(0, 8);
+
+  const pick = (it) => {
+    onPick(it);
+    setQ('');
+    setActive(0);
+  };
+
+  const onKeyDown = (e) => {
+    if (!open || !matches.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(a + 1, matches.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+    else if (e.key === 'Enter') { e.preventDefault(); pick(matches[active]); }
+    else if (e.key === 'Escape') { e.nativeEvent.stopPropagation(); setOpen(false); } // close the list, not the dialog
+  };
+
+  return (
+    <div className="relative">
+      <span className="mb-1.5 block text-sm font-medium text-slate-700">Add materials</span>
+      <Search size={16} className="pointer-events-none absolute bottom-2.5 left-3 text-slate-400" />
+      <Input
+        className="pl-9"
+        placeholder="Search by name or category…"
+        value={q}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); setActive(0); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onKeyDown={onKeyDown}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls="material-results"
+        autoFocus
+      />
+      {open && (q || matches.length > 0) && (
+        <ul id="material-results" role="listbox" className="absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+          {matches.length === 0 ? (
+            <li className="px-3 py-2 text-sm text-slate-400">No materials match “{q}”.</li>
+          ) : (
+            matches.map((it, i) => (
+              <li
+                key={it.id}
+                role="option"
+                aria-selected={i === active}
+                onMouseDown={(e) => { e.preventDefault(); pick(it); }}
+                onMouseEnter={() => setActive(i)}
+                className={cx('flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm', i === active && 'bg-brand-50')}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-slate-800">{it.name}</span>
+                  <span className="block text-xs text-slate-500">{it.category || 'No category'}</span>
+                </span>
+                <span className={cx('shrink-0 text-xs tabular-nums', isLow(it) ? 'font-medium text-red-600' : 'text-slate-500')}>
+                  {it.stock} {it.unit}{isLow(it) ? ' · low' : ''}
+                </span>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
 
