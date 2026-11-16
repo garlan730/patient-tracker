@@ -12,7 +12,7 @@ import { Button, Card, EmptyState, Input, PageHeader, ProgressBar, Select, Statu
 import StepModal from '../components/StepModal.jsx';
 import PatientFormModal from '../components/PatientFormModal.jsx';
 import PatientDrawer from '../components/PatientDrawer.jsx';
-import { ProgressStrip, ProgressSummary, RowMenu, WaitingBadge, shortDoctor, waitingDays } from '../components/TrackerParts.jsx';
+import { ProgressStrip, ProgressSummary, RowMenu, WaitingBadge, waitingDays } from '../components/TrackerParts.jsx';
 
 const SORTS = {
   recent: { label: 'Last activity (newest)', fn: (a, b) => (b.pr.lastActivity || '').localeCompare(a.pr.lastActivity || '') },
@@ -249,7 +249,7 @@ export default function Tracker() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900">{p.name}</p>
                   <p className="text-xs text-slate-500">
-                    {p.doctorId ? shortDoctor(doctorName(p.doctorId)) : t('No doctor assigned')}
+                    {p.doctorId ? doctorName(p.doctorId) : t('No doctor assigned')}
                     {p.notes?.length > 0 && <span className="ml-2 inline-flex items-center gap-0.5"><MessageSquare size={11} />{p.notes.length}</span>}
                   </p>
                 </div>
@@ -277,12 +277,12 @@ export default function Tracker() {
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <Th className="sticky left-0 z-30 min-w-[200px] bg-slate-50"><SortHead label={t('Patient')} active={sort === 'name'} onClick={() => sortBy('name')} /></Th>
-                <Th className="min-w-[150px]">{t('Doctor')}</Th>
+                <Th className="min-w-[200px]">{t('Doctor')}</Th>
                 <Th className={showDates ? 'min-w-[150px]' : 'min-w-[280px] w-full'}><SortHead label={t('Progress')} active={sort === 'progress'} onClick={() => sortBy('progress')} /></Th>
                 <Th className="min-w-[96px]"><SortHead label={t('Waiting')} active={sort === 'waiting'} onClick={() => sortBy('waiting')} /></Th>
                 {showDates
                   ? TREATMENT_STEPS.map((s) => <Th key={s.id} className="min-w-[112px] text-center">{s.label}</Th>)
-                  : <Th className="hidden min-w-[190px] xl:table-cell"><span className="sr-only">{t('Next step')}</span></Th>}
+                  : <Th className="hidden min-w-[190px] 2xl:table-cell"><span className="sr-only">{t('Next step')}</span></Th>}
               </tr>
             </thead>
             <tbody>
@@ -314,7 +314,7 @@ export default function Tracker() {
                       </div>
                     </Td>
                     <Td className="text-slate-600" title={doctorName(p.doctorId)}>
-                      <span className="line-clamp-2">{p.doctorId ? shortDoctor(doctorName(p.doctorId)) : <span className="text-slate-400">{t('Unassigned')}</span>}</span>
+                      <span>{p.doctorId ? doctorName(p.doctorId) : <span className="text-slate-400">{t('Unassigned')}</span>}</span>
                     </Td>
                     <Td>
                       {showDates ? (
@@ -331,7 +331,7 @@ export default function Tracker() {
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); recordNext(p, pr); }}
-                              className="mt-1.5 inline-flex items-center gap-1 rounded-md text-xs font-medium text-brand-700 hover:underline xl:hidden"
+                              className="mt-1.5 inline-flex items-center gap-1 rounded-md text-xs font-medium text-brand-700 hover:underline 2xl:hidden"
                             >
                               <CalendarPlus size={13} /> {t('Record {step}', { step: pr.nextStep.label })}
                             </button>
@@ -368,7 +368,7 @@ export default function Tracker() {
                         );
                       })
                     ) : (
-                      <Td className="hidden text-right xl:table-cell">
+                      <Td className="hidden text-right 2xl:table-cell">
                         {pr.nextStep ? (
                           <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={(e) => { e.stopPropagation(); recordNext(p, pr); }}>
                             <CalendarPlus size={14} /> {t('Record {step}', { step: pr.nextStep.label })}

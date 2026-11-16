@@ -43,7 +43,7 @@ export default function Dashboard() {
     }));
 
     const byDoctor = doctors
-      .map((d) => ({ id: d.id, label: d.name.replace(/^drg\.\s*/, '').split(',')[0], full: d.name, count: active.filter(({ p }) => p.doctorId === d.id).length }))
+      .map((d) => ({ id: d.id, label: d.name, full: d.name, count: active.filter(({ p }) => p.doctorId === d.id).length }))
       .sort((a, b) => b.count - a.count);
 
     const months = Array.from({ length: 12 }, (_, i) => startOfMonth(subMonths(new Date(), 11 - i)));

@@ -5,9 +5,6 @@ import { daysSince, fmtDate } from '../lib/dates.js';
 import { cx } from './ui.jsx';
 import { t } from '../lib/i18n-core.js';
 
-// "drg. Rezki Wahyuni Syamsuddin, Sp. Pros" → "Rezki Wahyuni Syamsuddin"
-export const shortDoctor = (name = '') => name.replace(/^(drg?\.)\s*/i, '').split(',')[0].trim();
-
 // Days since the last recorded step (or since the patient was added, if none). Completed patients aren't waiting.
 export function waitingDays(patient, progress) {
   if (progress.status === 'completed') return null;
