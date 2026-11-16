@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { stepsFor } from '../lib/constants.js';
-import { findOutOfOrder } from '../lib/patients.js';
+import { findOutOfOrder, planFor, suggestNextAfter } from '../lib/patients.js';
 import { fmtDateTime, todayISO } from '../lib/dates.js';
 import { useData } from '../lib/data.jsx';
-import { Button, Field, Input, Modal, Textarea, useConfirm } from './ui.jsx';
+import { Button, Field, Input, Modal, Select, Textarea, useConfirm } from './ui.jsx';
 import { t } from '../lib/i18n.jsx';
 
 // Edit the date + note for a single treatment step. `target` = { patient, stepId } or null.
@@ -14,16 +14,24 @@ export default function StepModal({ target, onClose }) {
   const [date, setDate] = useState('');
   const [note, setNote] = useState('');
   const [endsHere, setEndsHere] = useState(false);
+  const [nextId, setNextId] = useState('');
 
   const current = target ? target.patient.steps?.[target.stepId] : null;
   const step = target && stepsFor(target.patient).find((s) => s.id === target.stepId);
   const isProgramEnd = target && stepsFor(target.patient).at(-1).id === target.stepId;
+  // Planned steps still open after recording this one.
+  const nextOptions = target ? planFor(target.patient).filter((s) => s.id !== target.stepId && !target.patient.steps?.[s.id]?.date) : [];
+  const nextValue = nextOptions.some((s) => s.id === nextId) ? nextId : nextOptions[0]?.id || '';
 
   useEffect(() => {
     if (!target) return;
     setDate(current?.date || todayISO());
     setNote(current?.note || '');
     setEndsHere(target.patient.endStep === target.stepId);
+    // Keep a next step staff already chose (if it's still open); otherwise suggest the one after this step.
+    const p = target.patient;
+    const chosen = p.nextStepId && p.nextStepId !== target.stepId && !p.steps?.[p.nextStepId]?.date ? p.nextStepId : '';
+    setNextId(chosen || suggestNextAfter(p, target.stepId)?.id || '');
   }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!target) return null;
@@ -34,7 +42,10 @@ export default function StepModal({ target, onClose }) {
     if (!date) return;
     setStep(target.patient.id, target.stepId, { date, note });
     const wasEnd = target.patient.endStep === target.stepId;
-    if (endsHere !== wasEnd) updatePatient(target.patient.id, { endStep: endsHere ? target.stepId : null });
+    const changes = {};
+    if (endsHere !== wasEnd) changes.endStep = endsHere ? target.stepId : null;
+    if (!endsHere && nextValue !== (target.patient.nextStepId || '')) changes.nextStepId = nextValue || null;
+    if (Object.keys(changes).length) updatePatient(target.patient.id, changes);
     onClose();
   };
 
@@ -87,6 +98,13 @@ export default function StepModal({ target, onClose }) {
               <span className="block text-xs text-slate-500">{t("The patient is done after {step}; later steps aren't needed.", { step: step.label })}</span>
             </span>
           </label>
+        )}
+        {!endsHere && nextOptions.length > 0 && (
+          <Field label={t('Next step')} hint={t('Pick what the patient comes back for next.')}>
+            <Select value={nextValue} onChange={(e) => setNextId(e.target.value)}>
+              {nextOptions.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </Select>
+          </Field>
         )}
         {current?.updatedBy && (
           <p className="text-xs text-slate-400">

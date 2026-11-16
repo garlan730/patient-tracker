@@ -256,7 +256,7 @@ export default function Tracker() {
               </div>
               <div className="mt-3">
                 <ProgressStrip patient={p} progress={pr} size="lg" onStep={(stepId) => setStepTarget({ patient: p, stepId })} />
-                <ProgressSummary progress={pr} />
+                <ProgressSummary progress={pr} onPickNext={(stepId) => updatePatient(p.id, { nextStepId: stepId })} />
               </div>
               {pr.nextStep && (
                 <Button className="mt-3 w-full" variant="secondary" onClick={(e) => { e.stopPropagation(); recordNext(p, pr); }}>
@@ -323,7 +323,7 @@ export default function Tracker() {
                       ) : (
                         <>
                           <ProgressStrip patient={p} progress={pr} onStep={(stepId) => setStepTarget({ patient: p, stepId })} />
-                          <ProgressSummary progress={pr} />
+                          <ProgressSummary progress={pr} onPickNext={(stepId) => updatePatient(p.id, { nextStepId: stepId })} />
                           {/* Narrower screens: the Record button lives here instead of its own column. */}
                           {pr.nextStep && (
                             <button

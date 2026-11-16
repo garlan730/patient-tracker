@@ -16,7 +16,10 @@ export function getProgress(patient) {
   const done = TREATMENT_STEPS.filter((s) => steps[s.id]?.date);
   const lastIndex = TREATMENT_STEPS.reduce((acc, s, i) => (steps[s.id]?.date ? i : acc), -1);
   const lastStep = lastIndex >= 0 ? TREATMENT_STEPS[lastIndex] : null;
-  const nextStep = TREATMENT_STEPS.find((s) => !steps[s.id]?.date) || null;
+  // Staff can pick the next step (patient.nextStepId). Otherwise suggest the first empty step after the
+  // furthest one done, so a skipped earlier step doesn't stay "next" forever.
+  const manualNext = TREATMENT_STEPS.find((s) => s.id === patient.nextStepId && !steps[s.id]?.date);
+  const nextStep = manualNext || suggestNext(TREATMENT_STEPS, steps, lastIndex);
   const lastActivity = done
     .map((s) => steps[s.id].date)
     .sort()
@@ -32,12 +35,28 @@ export function getProgress(patient) {
     percent: Math.round((done.length / TREATMENT_STEPS.length) * 100),
     lastStep,
     nextStep: status === 'completed' ? null : nextStep,
+    nextIsManual: !!manualNext && status !== 'completed',
+    // Steps that can be chosen as the next one: planned and not yet done.
+    remaining: TREATMENT_STEPS.filter((s) => !steps[s.id]?.date),
     lastActivity,
     status,
     endsEarly: TREATMENT_STEPS.length < stepsFor(patient).length,
     finalStep: TREATMENT_STEPS.at(-1),
     inPlan: (stepId) => TREATMENT_STEPS.some((s) => s.id === stepId),
   };
+}
+
+function suggestNext(plan, steps, afterIndex) {
+  const isEmpty = (s) => !steps[s.id]?.date;
+  return plan.slice(afterIndex + 1).find(isEmpty) || plan.find(isEmpty) || null;
+}
+
+// Suggested next step once `stepId` is recorded (used to pre-fill the step editor).
+export function suggestNextAfter(patient, stepId) {
+  const plan = planFor(patient);
+  const steps = { ...(patient.steps || {}), [stepId]: { date: 'x' } };
+  const furthest = plan.reduce((acc, s, i) => (steps[s.id]?.date ? i : acc), -1);
+  return suggestNext(plan, steps, furthest);
 }
 
 // Returns the label of an earlier step whose date is after `date`, if any (sanity check for data entry).

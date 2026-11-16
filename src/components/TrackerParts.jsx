@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Check, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { WAITING_DAYS, stepsFor } from '../lib/constants.js';
 import { daysSince, fmtDate } from '../lib/dates.js';
 import { cx } from './ui.jsx';
@@ -72,8 +72,9 @@ export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
 
 // Text under the strip, in the same order and colours as the bar: done (green) on the left,
 // what's next (orange) on the right.
-export function ProgressSummary({ progress }) {
-  const { status, nextStep, lastStep, completed, total } = progress;
+export function ProgressSummary({ progress, onPickNext }) {
+  const { status, nextStep, lastStep, completed, total, remaining } = progress;
+  const nextText = <>{t('Next:')} <span className="font-semibold">{nextStep?.label}</span></>;
   return (
     <div className="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
       <span className={lastStep ? 'text-brand-700' : 'text-slate-400'}>
@@ -84,14 +85,28 @@ export function ProgressSummary({ progress }) {
       {status === 'completed' ? (
         <span className="font-medium text-brand-700">{t('Completed')}</span>
       ) : (
-        <span className="text-orange-700">{t('Next:')} <span className="font-semibold">{nextStep?.label}</span></span>
+        onPickNext && remaining.length > 1 ? (
+          <RowMenu
+            label={t('Change next step')}
+            triggerClassName="inline-flex items-center gap-0.5 rounded px-1 -mx-1 text-orange-700 hover:bg-orange-50"
+            trigger={<>{nextText}<ChevronDown size={12} /></>}
+            heading={t('Next step')}
+            items={remaining.map((s) => ({
+              label: s.label,
+              icon: <Check size={14} className={s.id === nextStep?.id ? 'text-orange-600' : 'invisible'} />,
+              onClick: () => onPickNext(s.id),
+            }))}
+          />
+        ) : (
+          <span className="text-orange-700">{nextText}</span>
+        )
       )}
     </div>
   );
 }
 
 // ⋯ menu rendered with fixed positioning so it isn't clipped by the scrolling table.
-export function RowMenu({ items, label = t('More actions') }) {
+export function RowMenu({ items, label = t('More actions'), trigger, triggerClassName, heading }) {
   const [pos, setPos] = useState(null);
   const btn = useRef(null);
   const menu = useRef(null);
@@ -119,8 +134,8 @@ export function RowMenu({ items, label = t('More actions') }) {
     e.stopPropagation();
     if (pos) return setPos(null);
     const r = btn.current.getBoundingClientRect();
-    const width = 176;
-    const below = window.innerHeight - r.bottom > 160;
+    const width = 208;
+    const below = window.innerHeight - r.bottom > 330;
     setPos({ left: Math.min(Math.max(8, r.right - width), window.innerWidth - width - 8), top: below ? r.bottom + 4 : undefined, bottom: below ? undefined : window.innerHeight - r.top + 4, width });
   };
 
@@ -133,12 +148,13 @@ export function RowMenu({ items, label = t('More actions') }) {
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={!!pos}
-        className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        className={triggerClassName || 'rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700'}
       >
-        <MoreHorizontal size={16} />
+        {trigger || <MoreHorizontal size={16} />}
       </button>
       {pos && (
-        <div ref={menu} role="menu" style={pos} className="fixed z-50 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+        <div ref={menu} role="menu" style={pos} className="fixed z-50 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+          {heading && <p className="px-3 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">{heading}</p>}
           {items.filter(Boolean).map((it) => (
             <button
               key={it.label}
