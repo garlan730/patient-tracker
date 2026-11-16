@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { PROGRAMS, STATUS } from './constants.js';
-import { getProgress } from './patients.js';
+import { getProgress, visitsOf } from './patients.js';
 import { t } from './i18n-core.js';
 
 const escape = (v) => {
@@ -10,13 +10,27 @@ const escape = (v) => {
 
 export function exportPatientsCsv(patients, doctorName, program) {
   const TREATMENT_STEPS = PROGRAMS[program].steps;
-  const header = [
+  const flexible = !!PROGRAMS[program].flexible;
+  const header = flexible ? [
+    // Visit log (Internal): steps can repeat, so one column lists every visit.
+    ...['Patient', 'Phone', 'Doctor', 'Status', 'Visits', 'Last Activity', 'Last step', 'Next step', 'Visit history'].map((h) => t(h)),
+    t('Patient Notes'),
+  ] : [
     ...['Patient', 'Phone', 'Doctor', 'Status', 'Progress (%)', 'Last Activity', 'Treatment Ends At'].map((h) => t(h)),
     ...TREATMENT_STEPS.flatMap((s) => [s.label, t('{step} note', { step: s.label })]),
     t('Patient Notes'),
   ];
   const rows = patients.map((p) => {
     const pr = getProgress(p);
+    const notes = (p.notes || []).map((n) => `[${n.createdAt.slice(0, 10)} ${n.authorName}] ${n.text}`).join(' | ');
+    if (flexible) {
+      return [
+        p.name, p.phone, doctorName(p.doctorId), STATUS[pr.status].label, pr.completed, pr.lastActivity || '',
+        pr.lastStep?.label || '', pr.nextStep?.label || '',
+        visitsOf(p).map((v) => `${v.date} ${v.step.label}${v.note ? ` (${v.note})` : ''}`).join(' | '),
+        notes,
+      ];
+    }
     return [
       p.name,
       p.phone,

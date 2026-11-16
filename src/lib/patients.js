@@ -9,17 +9,57 @@ export function planFor(patient) {
   return end >= 0 ? all.slice(0, end + 1) : all;
 }
 
+// Every recorded step as a visit { id, stepId, step, date, note, … }, oldest first.
+// Flexible programs (Internal) keep `patient.visits`, where a step can repeat. Fixed programs, and
+// Internal patients recorded before visits existed, use the one-date-per-step `patient.steps` map.
+export function visitsOf(patient) {
+  const byId = Object.fromEntries(stepsFor(patient).map((s) => [s.id, s]));
+  const list = isFlexible(patient) && Array.isArray(patient.visits)
+    ? patient.visits
+    : Object.entries(patient.steps || {}).filter(([, v]) => v?.date).map(([stepId, v]) => ({ id: `v-${stepId}`, stepId, ...v }));
+  return list
+    .filter((v) => byId[v.stepId] && v.date)
+    .map((v) => ({ ...v, step: byId[v.stepId] }))
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.updatedAt || '').localeCompare(b.updatedAt || ''));
+}
+
+// Visit log for a flexible program: any step can come next (including one already done).
+function flexibleProgress(patient) {
+  const plan = planFor(patient);
+  const visits = visitsOf(patient);
+  const last = visits.at(-1) || null;
+  const finalStep = plan.at(-1);
+  let status = visits.length ? 'in_progress' : 'not_started';
+  if (visits.some((v) => v.stepId === finalStep.id)) status = 'completed';
+  const manualNext = plan.find((s) => s.id === patient.nextStepId);
+  const nextStep = status === 'completed' ? null : manualNext || suggestNextAfter(patient, last?.stepId);
+  const distinct = new Set(visits.map((v) => v.stepId)).size;
+  return {
+    completed: visits.length,
+    total: plan.length,
+    percent: Math.min(100, Math.round((distinct / plan.length) * 100)),
+    lastStep: last?.step || null,
+    nextStep,
+    nextIsManual: !!manualNext && status !== 'completed',
+    flexible: true,
+    visits,
+    remaining: plan,
+    lastActivity: last?.date || null,
+    status,
+    endsEarly: plan.length < stepsFor(patient).length,
+    finalStep,
+    inPlan: (stepId) => plan.some((s) => s.id === stepId),
+  };
+}
+
 // Derived, read-only view of a patient's progress through their planned steps.
 export function getProgress(patient) {
+  if (isFlexible(patient)) return flexibleProgress(patient);
   const TREATMENT_STEPS = planFor(patient);
   const steps = patient.steps || {};
   const done = TREATMENT_STEPS.filter((s) => steps[s.id]?.date);
   const lastIndex = TREATMENT_STEPS.reduce((acc, s, i) => (steps[s.id]?.date ? i : acc), -1);
-  const flexible = isFlexible(patient);
-  // Flexible programs follow whatever order staff chose, so "last" is the most recent by date.
-  const lastStep = flexible
-    ? [...done].sort((a, b) => steps[a.id].date.localeCompare(steps[b.id].date)).at(-1) || null
-    : lastIndex >= 0 ? TREATMENT_STEPS[lastIndex] : null;
+  const lastStep = lastIndex >= 0 ? TREATMENT_STEPS[lastIndex] : null;
   // Staff can pick the next step (patient.nextStepId). Otherwise suggest the first empty step after the
   // furthest one done, so a skipped earlier step doesn't stay "next" forever.
   const manualNext = TREATMENT_STEPS.find((s) => s.id === patient.nextStepId && !steps[s.id]?.date);
@@ -40,7 +80,8 @@ export function getProgress(patient) {
     lastStep,
     nextStep: status === 'completed' ? null : nextStep,
     nextIsManual: !!manualNext && status !== 'completed',
-    flexible,
+    flexible: false,
+    visits: visitsOf(patient),
     // Steps that can be chosen as the next one: planned and not yet done.
     remaining: TREATMENT_STEPS.filter((s) => !steps[s.id]?.date),
     lastActivity,
@@ -59,6 +100,12 @@ function suggestNext(plan, steps, afterIndex) {
 // Suggested next step once `stepId` is recorded (used to pre-fill the step editor).
 export function suggestNextAfter(patient, stepId) {
   const plan = planFor(patient);
+  // Visit log: the step after this one in the usual order (repeats allowed, so nothing is "used up").
+  if (isFlexible(patient)) {
+    if (!stepId) return plan[0] || null;
+    const i = plan.findIndex((s) => s.id === stepId);
+    return i >= 0 ? plan[i + 1] || null : plan[0] || null;
+  }
   const steps = { ...(patient.steps || {}), [stepId]: { date: 'x' } };
   const furthest = plan.reduce((acc, s, i) => (steps[s.id]?.date ? i : acc), -1);
   return suggestNext(plan, steps, furthest);

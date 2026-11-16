@@ -4,6 +4,7 @@ import { t } from './i18n-core.js';
 export const TREATMENT_STEPS = [
   { id: 'consultation', get label() { return t('Consultation'); } },
   { id: 'anatomic', get label() { return t('Anatomic Impression'); } },
+  { id: 'physio', get label() { return t('Physiological Impression'); } },
   { id: 'vertical', get label() { return t('Vertical Dim.'); } },
   { id: 'material', get label() { return t('Material'); } },
   { id: 'implant', get label() { return t('Implant'); } },

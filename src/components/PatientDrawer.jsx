@@ -54,7 +54,7 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
             </div>
             <div className="mt-2 flex items-center gap-3">
               <StatusBadge status={pr.status} />
-              <ProgressBar percent={pr.percent} />
+              {!pr.flexible && <ProgressBar percent={pr.percent} />}
             </div>
           </div>
           <div className="flex shrink-0 gap-1">
@@ -70,21 +70,18 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
             </h3>
             <ol className="space-y-1">
               {(isFlexible(patient)
-                // Flexible programs: what was done (by date), then the chosen next step — no fixed list.
+                // Visit log: each visit (steps can repeat), then the chosen next step — no fixed list.
                 ? [
-                    ...stepsFor(patient)
-                      .filter((s) => patient.steps?.[s.id]?.date)
-                      .sort((a, b) => patient.steps[a.id].date.localeCompare(patient.steps[b.id].date)),
-                    ...(pr.nextStep ? [pr.nextStep] : []),
+                    ...pr.visits.map((v) => ({ key: v.id, s: v.step, st: v, visit: v })),
+                    ...(pr.nextStep ? [{ key: 'next', s: pr.nextStep, st: null }] : []),
                   ]
-                : stepsFor(patient)
-              ).map((s) => {
-                const st = patient.steps?.[s.id];
+                : stepsFor(patient).map((s) => ({ key: s.id, s, st: patient.steps?.[s.id] }))
+              ).map(({ key, s, st, visit }) => {
                 const skipped = !pr.inPlan(s.id) && !st?.date;
                 return (
-                  <li key={s.id}>
+                  <li key={key}>
                     <button
-                      onClick={() => onEditStep(patient, s.id)}
+                      onClick={() => onEditStep(patient, s.id, visit)}
                       className="flex w-full items-start gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50"
                     >
                       {st?.date ? (

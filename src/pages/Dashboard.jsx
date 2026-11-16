@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { Users, Clock, CheckCircle2, UserPlus, CalendarCheck, MessageSquare, ArrowRight, AlertTriangle } from 'lucide-react';
-import { DEFAULT_PROGRAM, PROGRAMS, programOf, stepsFor } from '../lib/constants.js';
-import { getProgress } from '../lib/patients.js';
+import { DEFAULT_PROGRAM, PROGRAMS, programOf } from '../lib/constants.js';
+import { getProgress, visitsOf } from '../lib/patients.js';
 import { daysSince, fmtDate, fmtDateTime, toDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
@@ -50,12 +50,11 @@ export default function Dashboard() {
     const monthly = months.map((m) => ({ key: format(m, 'yyyy-MM'), label: fmt(m, 'MMM yy'), count: 0 }));
     const activity = [];
     for (const p of inProgram) {
-      for (const s of stepsFor(p)) {
-        const st = p.steps?.[s.id];
-        if (!st?.date) continue;
-        const bucket = monthly.find((m) => m.key === st.date.slice(0, 7));
+      // Every recorded step, including repeated visits for Internal patients.
+      for (const v of visitsOf(p)) {
+        const bucket = monthly.find((m) => m.key === v.date.slice(0, 7));
         if (bucket) bucket.count++;
-        activity.push({ type: 'step', when: st.date, p, text: s.label, note: st.note });
+        activity.push({ type: 'step', when: v.date, p, text: v.step.label, note: v.note });
       }
       for (const n of p.notes || []) activity.push({ type: 'note', when: n.createdAt, p, text: n.text, author: n.authorName });
     }

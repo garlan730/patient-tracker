@@ -257,7 +257,7 @@ export default function Tracker() {
                 <div onClick={(e) => e.stopPropagation()}><RowMenu items={menuItems(p)} /></div>
               </div>
               <div className="mt-3">
-                <ProgressStrip patient={p} progress={pr} size="lg" onStep={(stepId) => setStepTarget({ patient: p, stepId })} />
+                <ProgressStrip patient={p} progress={pr} size="lg" onStep={(stepId, visit) => setStepTarget({ patient: p, stepId, visit })} />
                 <ProgressSummary progress={pr} onPickNext={(stepId) => updatePatient(p.id, { nextStepId: stepId })} />
               </div>
               {pr.nextStep && (
@@ -324,7 +324,7 @@ export default function Tracker() {
                         </div>
                       ) : (
                         <>
-                          <ProgressStrip patient={p} progress={pr} onStep={(stepId) => setStepTarget({ patient: p, stepId })} />
+                          <ProgressStrip patient={p} progress={pr} onStep={(stepId, visit) => setStepTarget({ patient: p, stepId, visit })} />
                           <ProgressSummary progress={pr} onPickNext={(stepId) => updatePatient(p.id, { nextStepId: stepId })} />
                           {/* Narrower screens: the Record button lives here instead of its own column. */}
                           {pr.nextStep && (
@@ -399,7 +399,7 @@ export default function Tracker() {
       <PatientDrawer
         patientId={drawerId}
         onClose={() => setDrawerId(null)}
-        onEditStep={(patient, stepId) => setStepTarget({ patient, stepId })}
+        onEditStep={(patient, stepId, visit) => setStepTarget({ patient, stepId, visit })}
         onEditPatient={(patient) => setForm({ open: true, patient })}
       />
     </>

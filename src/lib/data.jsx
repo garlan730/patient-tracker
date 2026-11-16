@@ -105,6 +105,25 @@ export function DataProvider({ children }) {
 
   const clearStep = useCallback((id, stepId) => run(updateDoc(patientRef(id), { [`steps.${stepId}`]: deleteField() })), [run]);
 
+  // Visit log (Internal): the whole list is written back on each change. Patients recorded before
+  // visits existed are converted from their steps map on their first change.
+  const currentVisits = (patient) => (Array.isArray(patient.visits)
+    ? patient.visits
+    : Object.entries(patient.steps || {}).filter(([, v]) => v?.date).map(([stepId, v]) => ({ id: `v-${stepId}`, stepId, ...v })));
+
+  const saveVisit = useCallback((patient, { id: visitId, stepId, date, note }) => {
+    const entry = { stepId, date, note: note?.trim() || '', updatedBy: user?.name, updatedAt: new Date().toISOString() };
+    const list = currentVisits(patient);
+    const visits = visitId && list.some((v) => v.id === visitId)
+      ? list.map((v) => (v.id === visitId ? { ...v, ...entry } : v))
+      : [...list, { id: crypto.randomUUID().slice(0, 8), ...entry }];
+    return run(updateDoc(patientRef(patient.id), { visits }));
+  }, [run, user]);
+
+  const deleteVisit = useCallback((patient, visitId) => run(updateDoc(patientRef(patient.id), {
+    visits: currentVisits(patient).filter((v) => v.id !== visitId),
+  })), [run]);
+
   const addNote = useCallback((id, text) => run(addDoc(collection(db, 'patients', id, 'notes'), {
     text: text.trim(),
     authorId: user?.id,
@@ -198,6 +217,8 @@ export function DataProvider({ children }) {
     deletePatient,
     setStep,
     clearStep,
+    saveVisit,
+    deleteVisit,
     addNote,
     deleteNote,
     addDoctor,

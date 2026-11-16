@@ -36,31 +36,29 @@ export function WaitingBadge({ days, compact }) {
 // Each segment is a button that opens that step's date/note editor.
 export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
   const flexible = isFlexible(patient);
-  // Flexible programs: only the steps done (in date order) and the chosen next step, no fixed row.
-  const steps = flexible
+  // Visit log (flexible programs): one segment per visit (steps can repeat), then the chosen next step.
+  // Fixed programs: one segment per step in order.
+  const segments = flexible
     ? [
-        ...stepsFor(patient)
-          .filter((s) => patient.steps?.[s.id]?.date)
-          .sort((a, b) => patient.steps[a.id].date.localeCompare(patient.steps[b.id].date)),
-        ...(progress.nextStep ? [progress.nextStep] : []),
+        ...progress.visits.map((v) => ({ key: v.id, step: v.step, record: v, visit: v })),
+        ...(progress.nextStep ? [{ key: 'next', step: progress.nextStep, record: null }] : []),
       ]
-    : stepsFor(patient);
+    : stepsFor(patient).map((s) => ({ key: s.id, step: s, record: patient.steps?.[s.id] }));
   return (
     <div className={cx('flex w-full items-center', size === 'lg' ? 'gap-1' : 'gap-0.5')} role="list" aria-label={t('Treatment steps')}>
-      {steps.map((s) => {
-        const st = patient.steps?.[s.id];
+      {segments.map(({ key, step: s, record: st, visit }) => {
         const done = !!st?.date;
-        const next = progress.nextStep?.id === s.id;
+        const next = !done && progress.nextStep?.id === s.id;
         const skipped = !done && !progress.inPlan(s.id);
         const label = `${s.label}: ${done ? fmtDate(st.date) : skipped ? t('not needed') : next ? t('next step') : t('not done yet')}${st?.note ? ` — ${st.note}` : ''}`;
         return (
           <button
-            key={s.id}
+            key={key}
             type="button"
             role="listitem"
             title={label}
             aria-label={label}
-            onClick={(e) => { e.stopPropagation(); onStep(s.id); }}
+            onClick={(e) => { e.stopPropagation(); onStep(s.id, visit); }}
             className={cx('group/seg', flexible ? (size === 'lg' ? 'w-9' : 'w-7') : 'flex-1', size === 'lg' ? 'py-2' : 'py-1.5')}
           >
             <span
@@ -87,7 +85,7 @@ export function ProgressSummary({ progress, onPickNext }) {
   return (
     <div className="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
       <span className={lastStep ? 'text-brand-700' : 'text-slate-400'}>
-        <span className="tabular-nums">{flexible ? t('{n} steps done', { n: completed }) : t('{done} of {total}', { done: completed, total })}</span>
+        <span className="tabular-nums">{flexible ? t(completed === 1 ? '{n} visit' : '{n} visits', { n: completed }) : t('{done} of {total}', { done: completed, total })}</span>
         {' · '}
         {lastStep ? <>{t('Last:')} <span className="font-medium">{lastStep.label}</span></> : t('No steps yet')}
       </span>
