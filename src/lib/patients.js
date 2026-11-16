@@ -1,4 +1,4 @@
-import { stepsFor } from './constants.js';
+import { isFlexible, stepsFor } from './constants.js';
 import { toDate } from './dates.js';
 
 // The steps this patient actually needs: their program's steps up to `endStep`
@@ -15,7 +15,11 @@ export function getProgress(patient) {
   const steps = patient.steps || {};
   const done = TREATMENT_STEPS.filter((s) => steps[s.id]?.date);
   const lastIndex = TREATMENT_STEPS.reduce((acc, s, i) => (steps[s.id]?.date ? i : acc), -1);
-  const lastStep = lastIndex >= 0 ? TREATMENT_STEPS[lastIndex] : null;
+  const flexible = isFlexible(patient);
+  // Flexible programs follow whatever order staff chose, so "last" is the most recent by date.
+  const lastStep = flexible
+    ? [...done].sort((a, b) => steps[a.id].date.localeCompare(steps[b.id].date)).at(-1) || null
+    : lastIndex >= 0 ? TREATMENT_STEPS[lastIndex] : null;
   // Staff can pick the next step (patient.nextStepId). Otherwise suggest the first empty step after the
   // furthest one done, so a skipped earlier step doesn't stay "next" forever.
   const manualNext = TREATMENT_STEPS.find((s) => s.id === patient.nextStepId && !steps[s.id]?.date);
@@ -36,6 +40,7 @@ export function getProgress(patient) {
     lastStep,
     nextStep: status === 'completed' ? null : nextStep,
     nextIsManual: !!manualNext && status !== 'completed',
+    flexible,
     // Steps that can be chosen as the next one: planned and not yet done.
     remaining: TREATMENT_STEPS.filter((s) => !steps[s.id]?.date),
     lastActivity,

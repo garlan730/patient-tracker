@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { WAITING_DAYS, stepsFor } from '../lib/constants.js';
+import { WAITING_DAYS, isFlexible, stepsFor } from '../lib/constants.js';
 import { daysSince, fmtDate } from '../lib/dates.js';
 import { cx } from './ui.jsx';
 import { t } from '../lib/i18n-core.js';
@@ -35,7 +35,16 @@ export function WaitingBadge({ days, compact }) {
 // The ring matters: some colour-blind users can't tell this orange from the green.
 // Each segment is a button that opens that step's date/note editor.
 export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
-  const steps = stepsFor(patient);
+  const flexible = isFlexible(patient);
+  // Flexible programs: only the steps done (in date order) and the chosen next step, no fixed row.
+  const steps = flexible
+    ? [
+        ...stepsFor(patient)
+          .filter((s) => patient.steps?.[s.id]?.date)
+          .sort((a, b) => patient.steps[a.id].date.localeCompare(patient.steps[b.id].date)),
+        ...(progress.nextStep ? [progress.nextStep] : []),
+      ]
+    : stepsFor(patient);
   return (
     <div className={cx('flex w-full items-center', size === 'lg' ? 'gap-1' : 'gap-0.5')} role="list" aria-label={t('Treatment steps')}>
       {steps.map((s) => {
@@ -52,7 +61,7 @@ export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
             title={label}
             aria-label={label}
             onClick={(e) => { e.stopPropagation(); onStep(s.id); }}
-            className={cx('group/seg flex-1', size === 'lg' ? 'py-2' : 'py-1.5')}
+            className={cx('group/seg', flexible ? (size === 'lg' ? 'w-9' : 'w-7') : 'flex-1', size === 'lg' ? 'py-2' : 'py-1.5')}
           >
             <span
               className={cx(
@@ -73,19 +82,19 @@ export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
 // Text under the strip, in the same order and colours as the bar: done (green) on the left,
 // what's next (orange) on the right.
 export function ProgressSummary({ progress, onPickNext }) {
-  const { status, nextStep, lastStep, completed, total, remaining } = progress;
+  const { status, nextStep, lastStep, completed, total, remaining, flexible } = progress;
   const nextText = <>{t('Next:')} <span className="font-semibold">{nextStep?.label}</span></>;
   return (
     <div className="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
       <span className={lastStep ? 'text-brand-700' : 'text-slate-400'}>
-        <span className="tabular-nums">{t('{done} of {total}', { done: completed, total })}</span>
+        <span className="tabular-nums">{flexible ? t('{n} steps done', { n: completed }) : t('{done} of {total}', { done: completed, total })}</span>
         {' · '}
         {lastStep ? <>{t('Last:')} <span className="font-medium">{lastStep.label}</span></> : t('No steps yet')}
       </span>
       {status === 'completed' ? (
         <span className="font-medium text-brand-700">{t('Completed')}</span>
       ) : (
-        onPickNext && remaining.length > 1 ? (
+        onPickNext && (remaining.length > 1 || flexible) ? (
           <RowMenu
             label={t('Change next step')}
             triggerClassName="inline-flex items-center gap-0.5 rounded px-1 -mx-1 text-orange-700 hover:bg-orange-50"

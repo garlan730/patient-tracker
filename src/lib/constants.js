@@ -15,18 +15,25 @@ export const TREATMENT_STEPS = [
   { id: 'crown_place', get label() { return t('Crown Placement'); } },
 ];
 
+// Denture steps. Staff pick the next step from this list (the program is `flexible`), so the order
+// here is only the usual order used for suggestions. Ids anatomic/vertical/sent_lab/placement are kept
+// from the earlier 5-step list so existing dates still show.
 export const INTERNAL_STEPS = [
+  { id: 'consultation', get label() { return t('Consultation'); } },
   { id: 'anatomic', get label() { return t('Anatomic Impression'); } },
-  { id: 'vertical', get label() { return t('Vertical Dim.'); } },
+  { id: 'physio', get label() { return t('Physiological Impression'); } },
+  { id: 'vertical', get label() { return t('Bite (Vertical Dim.)'); } },
+  { id: 'tryin', get label() { return t('Try-in'); } },
   { id: 'sent_lab', get label() { return t('Sent to Lab'); } },
-  { id: 'arrived', get label() { return t('Arrived at Clinic'); } },
-  { id: 'placement', get label() { return t('Placement'); } },
+  { id: 'placement', get label() { return t('Insertion'); } },
+  { id: 'control1', get label() { return t('Control 1'); } },
+  { id: 'control2', get label() { return t('Control 2'); } },
 ];
 
 // Each patient belongs to one program; the program decides which steps are tracked.
 export const PROGRAMS = {
   // Order here is the order of the tabs.
-  internal: { get label() { return t('Internal Patients'); }, get short() { return t('Internal'); }, steps: INTERNAL_STEPS },
+  internal: { get label() { return t('Internal Patients'); }, get short() { return t('Internal'); }, steps: INTERNAL_STEPS, flexible: true },
   tanam: { get label() { return t("Tanam's Patients"); }, get short() { return t('Tanam'); }, steps: TREATMENT_STEPS },
 };
 
@@ -36,6 +43,8 @@ export const DEFAULT_PROGRAM = 'internal';
 // Patients saved before programs existed have no `program` field and are Tanam patients.
 export const programOf = (patient) => (PROGRAMS[patient?.program] ? patient.program : 'tanam');
 export const stepsFor = (patient) => PROGRAMS[programOf(patient)].steps;
+// Flexible programs show only the steps done plus the chosen next one, instead of a fixed row of steps.
+export const isFlexible = (patient) => !!PROGRAMS[programOf(patient)].flexible;
 
 export const STATUS = {
   not_started: { get label() { return t('Not started'); }, className: 'bg-slate-100 text-slate-600 ring-slate-200' },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, CheckCircle2, Circle, Trash2, MessageSquare, Phone, Stethoscope, Pencil } from 'lucide-react';
-import { PROGRAMS, programOf, stepsFor } from '../lib/constants.js';
+import { PROGRAMS, isFlexible, programOf, stepsFor } from '../lib/constants.js';
 import { getProgress } from '../lib/patients.js';
 import { fmtDate, fmtDateTime } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
@@ -69,7 +69,16 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
               {t('Treatment timeline')}{pr.endsEarly && <span className="ml-1 font-normal normal-case tracking-normal">· {t('ends at {step}', { step: pr.finalStep.label })}</span>}
             </h3>
             <ol className="space-y-1">
-              {stepsFor(patient).map((s) => {
+              {(isFlexible(patient)
+                // Flexible programs: what was done (by date), then the chosen next step — no fixed list.
+                ? [
+                    ...stepsFor(patient)
+                      .filter((s) => patient.steps?.[s.id]?.date)
+                      .sort((a, b) => patient.steps[a.id].date.localeCompare(patient.steps[b.id].date)),
+                    ...(pr.nextStep ? [pr.nextStep] : []),
+                  ]
+                : stepsFor(patient)
+              ).map((s) => {
                 const st = patient.steps?.[s.id];
                 const skipped = !pr.inPlan(s.id) && !st?.date;
                 return (

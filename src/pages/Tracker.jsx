@@ -39,7 +39,9 @@ export default function Tracker() {
   const sort = params.get('sort') || 'recent';
   const program = PROGRAMS[params.get('program')] ? params.get('program') : DEFAULT_PROGRAM;
   const TREATMENT_STEPS = PROGRAMS[program].steps;
-  const showDates = params.get('view') === 'dates';
+  // Flexible programs (Internal) have no fixed step order, so there are no per-step date columns.
+  const flexibleProgram = !!PROGRAMS[program].flexible;
+  const showDates = !flexibleProgram && params.get('view') === 'dates';
   const setParam = (key, value) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -160,7 +162,7 @@ export default function Tracker() {
               {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{t(s.label)}</option>)}
             </Select>
             {/* Phones show cards, so the date-columns switch only appears on wider screens. */}
-            <div className="hidden md:block">
+            <div className={flexibleProgram ? 'hidden' : 'hidden md:block'}>
               <Button
                 variant={showDates ? 'primary' : 'secondary'}
                 onClick={() => setParam('view', showDates ? '' : 'dates')}
