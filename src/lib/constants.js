@@ -40,3 +40,6 @@ export const ROLES = {
   admin: { label: 'Admin', description: 'Full access: doctors, users, delete patients' },
   staff: { label: 'Staff', description: 'Track progress, add patients and notes' },
 };
+
+// Days since a patient's last step before the tracker flags them as waiting (amber) or overdue (red).
+export const WAITING_DAYS = { warn: 30, alert: 60 };
