@@ -5,8 +5,11 @@ import { AuthProvider } from './lib/auth.jsx';
 import { DataProvider } from './lib/data.jsx';
 import { InventoryProvider } from './lib/inventory.jsx';
 import { LanguageProvider } from './lib/i18n.jsx';
+import { lockZoomInInstalledApp } from './lib/install.js';
 import App from './App.jsx';
 import './index.css';
+
+lockZoomInInstalledApp();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
