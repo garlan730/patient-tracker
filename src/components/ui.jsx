@@ -28,7 +28,8 @@ export function Button({ variant = 'primary', size = 'md', className, ...props }
 }
 
 const inputBase =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20';
+  // 16px text on phones: iPhones zoom the page in when a smaller text box is tapped.
+  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 sm:text-sm placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20';
 
 export const Input = ({ className, ...props }) => <input className={cx(inputBase, className)} {...props} />;
 export const Textarea = ({ className, ...props }) => <textarea className={cx(inputBase, 'resize-y', className)} {...props} />;
@@ -74,7 +75,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={onClose} />
       <div
         role="dialog"

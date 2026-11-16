@@ -25,7 +25,7 @@ export default function Layout() {
 
   const sidebar = (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 px-5 py-5">
+      <div className="flex items-center gap-2.5 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1.5">
           <img src={logo} alt="" className="h-full w-full object-contain" />
         </div>
@@ -57,7 +57,7 @@ export default function Layout() {
       <div className="px-3 pb-3">
         <InstallApp className="flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/15" />
       </div>
-      <div className="border-t border-white/10 p-4">
+      <div className="border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
             {user.name.charAt(0).toUpperCase()}
@@ -99,14 +99,14 @@ export default function Layout() {
       )}
 
       <div className="lg:pl-60">
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:hidden">
           <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Open menu">
             <Menu size={20} />
           </button>
           <img src={logo} alt="" className="h-6 w-6 object-contain" />
           <span className="truncate text-sm font-semibold text-slate-800">Klinik Utama Baruga Medical Center</span>
         </header>
-        <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto max-w-[1600px] px-4 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+1rem))] pt-5 sm:px-6 sm:pt-6 lg:px-8 lg:py-8">
           {error && (
             <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />

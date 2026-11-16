@@ -91,7 +91,7 @@ export default function Dashboard() {
                   program === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 )}
               >
-                {prog.label}
+                <span className="sm:hidden">{prog.short}</span><span className="hidden sm:inline">{prog.label}</span>
               </button>
             ))}
           </div>
@@ -112,32 +112,35 @@ export default function Dashboard() {
         </Link>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <Kpi icon={Users} label="Active patients" value={stats.total} to={trackerUrl()} />
         <Kpi icon={Clock} label="In progress" value={stats.inProgress} to={trackerUrl("status=in_progress")} />
         <Kpi icon={CheckCircle2} label="Completed" value={stats.completed} to={trackerUrl("status=completed")} />
         <Kpi icon={UserPlus} label="New this month" value={stats.newThisMonth} to={trackerUrl("sort=created")} />
-        <Kpi icon={CalendarCheck} label="Steps done (30 days)" value={stats.stepsLast30} />
+        <Kpi icon={CalendarCheck} label="Steps done (30 days)" value={stats.stepsLast30} className="col-span-2 lg:col-span-1" />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <ChartCard title="Patients by next step" subtitle="Where active patients are waiting. Click a bar to see them." className="xl:col-span-2">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={stats.byStage} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="label" tick={AXIS} interval={0} angle={-30} textAnchor="end" height={70} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
-              <YAxis allowDecimals={false} tick={AXIS} tickLine={false} axisLine={false} />
-              <Tooltip cursor={{ fill: '#f1f5f9' }} content={<ChartTip unit="patient" />} />
-              <Bar
-                dataKey="count"
-                fill={BAR}
-                radius={[4, 4, 0, 0]}
-                maxBarSize={36}
-                cursor="pointer"
-                onClick={(d) => navigate(trackerUrl(`stage=${d.id ?? d.payload?.id}`))}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <ChartCard title="Patients by next step" subtitle="Where active patients are waiting. Tap a step to see them." className="xl:col-span-2">
+          <ul className="space-y-1">
+            {stats.byStage.map((s) => {
+              const max = Math.max(1, ...stats.byStage.map((x) => x.count));
+              return (
+                <li key={s.id}>
+                  <Link
+                    to={trackerUrl(`stage=${s.id}`)}
+                    className={cx('grid grid-cols-[minmax(0,9rem)_1fr_2.5rem] items-center gap-3 rounded-lg px-1 py-1.5 text-sm hover:bg-slate-50 sm:grid-cols-[minmax(0,11rem)_1fr_3rem]', !s.count && 'opacity-50')}
+                  >
+                    <span className="truncate text-slate-600">{s.label}</span>
+                    <span className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                      <span className="block h-full rounded-full bg-brand-700" style={{ width: `${(s.count / max) * 100}%` }} />
+                    </span>
+                    <span className="text-right font-semibold tabular-nums text-slate-900">{s.count}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </ChartCard>
 
         <ChartCard title="Status breakdown" subtitle="Active patients">
@@ -166,7 +169,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={stats.monthly} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
+              <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} interval="preserveStartEnd" minTickGap={12} />
               <YAxis allowDecimals={false} tick={AXIS} tickLine={false} axisLine={false} />
               <Tooltip cursor={{ fill: '#f1f5f9' }} content={<ChartTip unit="step" />} />
               <Bar dataKey="count" fill={BAR} radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -176,7 +179,7 @@ export default function Dashboard() {
 
         <ChartCard title="Patients per doctor" subtitle="Active caseload">
           <ul className="space-y-3 pt-1">
-            {stats.byDoctor.map((d) => {
+            {stats.byDoctor.filter((d) => d.count > 0).map((d) => {
               const max = stats.byDoctor[0]?.count || 1;
               return (
                 <li key={d.id}>
@@ -193,6 +196,11 @@ export default function Dashboard() {
               );
             })}
           </ul>
+          {stats.byDoctor.some((d) => d.count === 0) && (
+            <p className="mt-3 text-xs text-slate-400">
+              {stats.byDoctor.filter((d) => d.count === 0).length} other doctor(s) have no active patients.
+            </p>
+          )}
         </ChartCard>
 
         <ChartCard title="Recent activity" className="xl:col-span-3">
@@ -214,8 +222,11 @@ export default function Dashboard() {
                     {(a.type === 'note' ? a.text : a.note) && (
                       <p className="truncate text-xs text-slate-500">{a.type === 'note' ? a.text : a.note}</p>
                     )}
+                    <p className="mt-0.5 text-xs tabular-nums text-slate-400 sm:hidden">
+                      {a.type === 'note' ? fmtDateTime(a.when) : fmtDate(a.when)}
+                    </p>
                   </div>
-                  <span className="shrink-0 text-xs tabular-nums text-slate-400">
+                  <span className="hidden shrink-0 text-xs tabular-nums text-slate-400 sm:block">
                     {a.type === 'note' ? fmtDateTime(a.when) : fmtDate(a.when)}
                   </span>
                 </li>
@@ -231,9 +242,9 @@ export default function Dashboard() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, to }) {
+function Kpi({ icon: Icon, label, value, to, className = '' }) {
   const body = (
-    <Card className={`p-4 ${to ? 'transition hover:border-brand-200 hover:shadow' : ''}`}>
+    <Card className={`h-full p-4 ${to ? 'transition hover:border-brand-200 hover:shadow' : ''}`}>
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">{label}</p>
         <Icon size={18} className="text-slate-400" />
@@ -241,12 +252,12 @@ function Kpi({ icon: Icon, label, value, to }) {
       <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
     </Card>
   );
-  return to ? <Link to={to}>{body}</Link> : body;
+  return to ? <Link to={to} className={className}>{body}</Link> : <div className={className}>{body}</div>;
 }
 
 function ChartCard({ title, subtitle, className = '', children }) {
   return (
-    <Card className={`p-5 ${className}`}>
+    <Card className={`min-w-0 p-4 sm:p-5 ${className}`}>
       <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
       {subtitle && <p className="mb-3 text-xs text-slate-500">{subtitle}</p>}
       <div className={subtitle ? '' : 'mt-3'}>{children}</div>

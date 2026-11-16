@@ -563,7 +563,7 @@ function QtyStepper({ value, unit, label, onChange }) {
           onChange={(e) => onChange(e.target.value)}
           onBlur={() => { if (!(Number(value) >= 1)) onChange('1'); }}
           aria-label={label}
-          className="h-9 w-12 border-x border-slate-300 text-center text-sm tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+          className="h-9 w-12 border-x border-slate-300 text-center text-base tabular-nums sm:text-sm focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button type="button" className={btn} onClick={() => onChange(String(n + 1))} aria-label="Increase">
           <Plus size={14} />

@@ -126,7 +126,7 @@ export default function Tracker() {
               program === key ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'
             )}
           >
-            {prog.label}
+            <span className="sm:hidden">{prog.short}</span><span className="hidden sm:inline">{prog.label}</span>
             <span className={cx('rounded-full px-2 py-0.5 text-xs tabular-nums', program === key ? 'bg-brand-50 text-brand-700' : 'bg-slate-100 text-slate-500')}>
               {programCounts[key]}
             </span>
