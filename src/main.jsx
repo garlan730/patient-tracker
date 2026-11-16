@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './lib/auth.jsx';
 import { DataProvider } from './lib/data.jsx';
 import { InventoryProvider } from './lib/inventory.jsx';
+import { LanguageProvider } from './lib/i18n.jsx';
 import App from './App.jsx';
 import './index.css';
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <DataProvider>
           <InventoryProvider>
-            <App />
+            <LanguageProvider>
+              <App />
+            </LanguageProvider>
           </InventoryProvider>
         </DataProvider>
       </AuthProvider>

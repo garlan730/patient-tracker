@@ -5,6 +5,7 @@ import { fmtDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { hasRealEmail } from '../lib/firebase.js';
+import { t } from '../lib/i18n.jsx';
 import { Button, Card, Field, Input, Modal, PageHeader, Select, cx, useConfirm } from '../components/ui.jsx';
 
 export default function UsersPage() {
@@ -15,14 +16,14 @@ export default function UsersPage() {
   const [resetting, setResetting] = useState(null); // username account whose password is being reset
   const [notice, setNotice] = useState('');
 
-  const tell = (msg) => confirm({ title: 'Notice', message: msg, confirmLabel: 'OK' });
+  const tell = (msg) => confirm({ title: t('Notice'), message: msg, confirmLabel: t('OK') });
 
   const toggleActive = async (u) => {
     if (u.active) {
       const ok = await confirm({
-        title: 'Deactivate user?',
-        message: `${u.name} will be signed out and can no longer sign in. You can reactivate them later.`,
-        confirmLabel: 'Deactivate',
+        title: t('Deactivate user?'),
+        message: t('{name} will be signed out and can no longer sign in. You can reactivate them later.', { name: u.name }),
+        confirmLabel: t('Deactivate'),
         danger: true,
       });
       if (!ok) return;
@@ -38,7 +39,7 @@ export default function UsersPage() {
     if (!hasRealEmail(u.email)) return setResetting(u);
     try {
       await resetPassword(u.email);
-      setNotice(`Password reset email sent to ${u.email}.`);
+      setNotice(t('Password reset email sent to {email}.', { email: u.email }));
     } catch (err) {
       await tell(err.message);
     }
@@ -47,9 +48,9 @@ export default function UsersPage() {
   return (
     <div className="max-w-5xl">
       <PageHeader
-        title="Users"
-        description="Who can sign in and what they can do."
-        actions={<Button onClick={() => setModal({})}><Plus size={16} /> Add user</Button>}
+        title={t('Users')}
+        description={t('Who can sign in and what they can do.')}
+        actions={<Button onClick={() => setModal({})}><Plus size={16} /> {t('Add user')}</Button>}
       />
 
       {notice && <p className="mb-4 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{notice}</p>}
@@ -59,11 +60,11 @@ export default function UsersPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Username</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Added</th>
+                <th className="px-4 py-3">{t('Name')}</th>
+                <th className="px-4 py-3">{t('Username')}</th>
+                <th className="px-4 py-3">{t('Role')}</th>
+                <th className="px-4 py-3">{t('Status')}</th>
+                <th className="px-4 py-3">{t('Added')}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -72,7 +73,7 @@ export default function UsersPage() {
                 <tr key={u.id} className={u.active ? '' : 'text-slate-400'}>
                   <td className="px-4 py-3 font-medium">
                     <span className={u.active ? 'text-slate-800' : ''}>{u.name}</span>
-                    {u.id === me.id && <span className="ml-1 text-xs font-normal text-slate-400">(you)</span>}
+                    {u.id === me.id && <span className="ml-1 text-xs font-normal text-slate-400">{t('(you)')}</span>}
                   </td>
                   <td className="px-4 py-3">{u.username}</td>
                   <td className="px-4 py-3">
@@ -80,21 +81,21 @@ export default function UsersPage() {
                       {ROLES[u.role]?.label || u.role}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs">{u.active ? 'Active' : 'Deactivated'}</td>
+                  <td className="px-4 py-3 text-xs">{u.active ? t('Active') : t('Deactivated')}</td>
                   <td className="px-4 py-3 text-slate-500">{fmtDate(u.createdAt?.slice(0, 10))}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => setModal({ user: u })} aria-label="Edit" title="Edit"><Pencil size={15} /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setModal({ user: u })} aria-label={t('Edit')} title={t('Edit')}><Pencil size={15} /></Button>
                       {u.id !== me.id && (
-                        <Button size="icon" variant="ghost" onClick={() => sendReset(u)} aria-label="Reset password" title="Reset password"><KeyRound size={15} /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => sendReset(u)} aria-label={t('Reset password')} title={t('Reset password')}><KeyRound size={15} /></Button>
                       )}
                       {u.id !== me.id && (
                         <Button
                           size="icon"
                           variant={u.active ? 'danger-ghost' : 'ghost'}
                           onClick={() => toggleActive(u)}
-                          aria-label={u.active ? 'Deactivate' : 'Reactivate'}
-                          title={u.active ? 'Deactivate' : 'Reactivate'}
+                          aria-label={u.active ? t('Deactivate') : t('Reactivate')}
+                          title={u.active ? t('Deactivate') : t('Reactivate')}
                         >
                           {u.active ? <UserX size={15} /> : <UserCheck size={15} />}
                         </Button>
@@ -109,29 +110,28 @@ export default function UsersPage() {
       </Card>
 
       <Card className="mt-6 p-4">
-        <h2 className="text-sm font-semibold text-slate-900">Role permissions</h2>
+        <h2 className="text-sm font-semibold text-slate-900">{t('Role permissions')}</h2>
         <ul className="mt-2 space-y-1 text-sm text-slate-600">
           {Object.values(ROLES).map((r) => (
             <li key={r.label}><span className="font-medium text-slate-800">{r.label}:</span> {r.description}</li>
           ))}
         </ul>
         <p className="mt-3 text-xs text-slate-500">
-          Deactivated users are blocked immediately. To delete a login completely, remove it in the Firebase console under Authentication → Users.
+          {t('Deactivated users are blocked immediately. To delete a login completely, remove it in the Firebase console under Authentication → Users.')}
         </p>
       </Card>
 
       <Card className="mt-6 p-4">
-        <h2 className="text-sm font-semibold text-slate-900">Backup</h2>
+        <h2 className="text-sm font-semibold text-slate-900">{t('Backup')}</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Download all patients, treatment dates, notes, doctors and users as a file. Do this regularly and keep the file somewhere safe —
-          it contains patient data.
+          {t('Download all patients, treatment dates, notes, doctors and users as a file. Do this regularly and keep the file somewhere safe — it contains patient data.')}
         </p>
-        <Button variant="secondary" size="sm" className="mt-3" onClick={downloadBackup}><Download size={14} /> Download backup</Button>
+        <Button variant="secondary" size="sm" className="mt-3" onClick={downloadBackup}><Download size={14} /> {t('Download backup')}</Button>
       </Card>
 
       <ImportCard />
 
-      <ResetPasswordModal user={resetting} onClose={() => setResetting(null)} onDone={(u) => setNotice(`Password for ${u.username} has been reset. Share the new password privately.`)} />
+      <ResetPasswordModal user={resetting} onClose={() => setResetting(null)} onDone={(u) => setNotice(t('Password for {name} has been reset. Share the new password privately.', { name: u.username }))} />
 
       <UserModal
         state={modal}
@@ -162,7 +162,7 @@ function UserModal({ state, isSelf, onClose, onSave }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!editing && form.password.length < 6) return setError('Password must be at least 6 characters.');
+    if (!editing && form.password.length < 6) return setError(t('Password must be at least 6 characters.'));
     setBusy(true);
     try {
       await onSave(form);
@@ -178,26 +178,26 @@ function UserModal({ state, isSelf, onClose, onSave }) {
     <Modal
       open={!!state}
       onClose={onClose}
-      title={editing ? 'Edit user' : 'Add user'}
+      title={editing ? t('Edit user') : t('Add user')}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="user-form" disabled={busy}>{editing ? 'Save changes' : 'Add user'}</Button>
+          <Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button>
+          <Button type="submit" form="user-form" disabled={busy}>{editing ? t('Save changes') : t('Add user')}</Button>
         </>
       }
     >
       <form id="user-form" onSubmit={submit} className="space-y-4">
-        <Field label="Full name"><Input value={form.name || ''} onChange={set('name')} required autoFocus /></Field>
-        <Field label="Username" hint={editing ? 'Username can’t be changed.' : 'They sign in with this. Lowercase letters, numbers, dot, dash or underscore.'}>
-          <Input value={form.username || ''} onChange={set('username')} required disabled={!!editing} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="e.g. sinta" />
+        <Field label={t('Full name')}><Input value={form.name || ''} onChange={set('name')} required autoFocus /></Field>
+        <Field label={t('Username')} hint={editing ? t('Username can’t be changed.') : t('They sign in with this. Lowercase letters, numbers, dot, dash or underscore.')}>
+          <Input value={form.username || ''} onChange={set('username')} required disabled={!!editing} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder={t('e.g. sinta')} />
         </Field>
-        <Field label="Role" hint={isSelf ? 'You can’t remove the last admin.' : undefined}>
+        <Field label={t('Role')} hint={isSelf ? t('You can’t remove the last admin.') : undefined}>
           <Select value={form.role || 'staff'} onChange={set('role')}>
             {Object.entries(ROLES).map(([k, r]) => <option key={k} value={k}>{r.label} — {r.description}</option>)}
           </Select>
         </Field>
         {!editing && (
-          <Field label="Temporary password" hint="At least 6 characters. Share it privately; they can change it after signing in.">
+          <Field label={t('Temporary password')} hint={t('At least 6 characters. Share it privately; they can change it after signing in.')}>
             <Input type="password" value={form.password || ''} onChange={set('password')} autoComplete="new-password" required />
           </Field>
         )}
@@ -227,7 +227,7 @@ function ImportCard() {
       }
       setFile({ name: f.name, program: data.program, source: data.source, patients: data.patients });
     } catch (err) {
-      setStatus({ busy: false, error: err instanceof SyntaxError ? 'Could not read the file (invalid JSON).' : err.message, result: '' });
+      setStatus({ busy: false, error: err instanceof SyntaxError ? t('Could not read the file (invalid JSON).') : err.message, result: '' });
     }
   };
 
@@ -235,7 +235,7 @@ function ImportCard() {
     setStatus({ busy: true, error: '', result: '' });
     try {
       const { added, skipped } = await importPatients(file.program, file.patients);
-      setStatus({ busy: false, error: '', result: `Imported ${added} patient${added === 1 ? '' : 's'}${skipped ? `; skipped ${skipped} already in the tracker` : ''}.` });
+      setStatus({ busy: false, error: '', result: skipped ? t('Imported {n} patient(s); skipped {skipped} already in the tracker.', { n: added, skipped }) : t('Imported {n} patient(s).', { n: added }) });
       setFile(null);
     } catch (err) {
       setStatus({ busy: false, error: err.message, result: '' });
@@ -247,28 +247,28 @@ function ImportCard() {
 
   return (
     <Card className="mt-6 p-4">
-      <h2 className="text-sm font-semibold text-slate-900">Import patients</h2>
-      <p className="mt-1 text-sm text-slate-600">Add many patients at once from an import file. Patients already in the tracker (same name) are skipped.</p>
+      <h2 className="text-sm font-semibold text-slate-900">{t('Import patients')}</h2>
+      <p className="mt-1 text-sm text-slate-600">{t('Add many patients at once from an import file. Patients already in the tracker (same name) are skipped.')}</p>
       {file ? (
         <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
           <p className="font-medium">{file.name}</p>
           {file.source && <p className="text-xs text-slate-500">{file.source}</p>}
           <ul className="mt-2 list-disc pl-5 text-slate-600">
-            <li>{file.patients.length} patients → {PROGRAMS[file.program].label}</li>
-            <li>{withDate} with a {PROGRAMS[file.program].steps[0].label} date</li>
-            <li>{withNote} with a note</li>
-            <li>No doctor assigned — set it later by editing each patient</li>
+            <li>{t('{n} patients', { n: file.patients.length })} → {PROGRAMS[file.program].label}</li>
+            <li>{t('{n} with a {step} date', { n: withDate, step: PROGRAMS[file.program].steps[0].label })}</li>
+            <li>{t('{n} with a note', { n: withNote })}</li>
+            <li>{t('No doctor assigned — set it later by editing each patient')}</li>
           </ul>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={run} disabled={status.busy}>
-              {status.busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Import {file.patients.length} patients
+              {status.busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {t('Import {n} patients', { n: file.patients.length })}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setFile(null)} disabled={status.busy}>Cancel</Button>
+            <Button size="sm" variant="secondary" onClick={() => setFile(null)} disabled={status.busy}>{t('Cancel')}</Button>
           </div>
         </div>
       ) : (
         <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50">
-          <Upload size={14} /> Choose import file…
+          <Upload size={14} /> {t('Choose import file…')}
           <input type="file" accept=".json,application/json" className="hidden" onChange={pick} />
         </label>
       )}
@@ -294,7 +294,7 @@ function ResetPasswordModal({ user, onClose, onDone }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (password.length < 6) return setError('Password must be at least 6 characters.');
+    if (password.length < 6) return setError(t('Password must be at least 6 characters.'));
     setBusy(true);
     try {
       await recreateLogin(user, password);
@@ -311,23 +311,23 @@ function ResetPasswordModal({ user, onClose, onDone }) {
     <Modal
       open={!!user}
       onClose={onClose}
-      title={`Reset password · ${user?.username}`}
+      title={`${t('Reset password')} · ${user?.username}`}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="reset-form" disabled={busy}>Reset password</Button>
+          <Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button>
+          <Button type="submit" form="reset-form" disabled={busy}>{t('Reset password')}</Button>
         </>
       }
     >
       <form id="reset-form" onSubmit={submit} className="space-y-4 text-sm text-slate-600">
         <ol className="list-decimal space-y-2 pl-5">
           <li>
-            In the <a className="text-brand-700 underline" href="https://console.firebase.google.com/project/patient-tracker-8a04c/authentication/users" target="_blank" rel="noreferrer">Firebase console → Authentication → Users</a>,
-            find <code className="rounded bg-slate-100 px-1 text-xs">{user?.email}</code>, open its ⋮ menu and choose <b>Delete account</b>.
+            {t('Open')} <a className="text-brand-700 underline" href="https://console.firebase.google.com/project/patient-tracker-8a04c/authentication/users" target="_blank" rel="noreferrer">Firebase console → Authentication → Users</a>,{' '}
+            {t('find')} <code className="rounded bg-slate-100 px-1 text-xs">{user?.email}</code>, {t('open its ⋮ menu and choose')} <b>Delete account</b>.
           </li>
-          <li>Enter a new temporary password here and click <b>Reset password</b>. Their name and role stay the same.</li>
+          <li>{t('Enter a new temporary password here and click')} <b>{t('Reset password')}</b>. {t('Their name and role stay the same.')}</li>
         </ol>
-        <Field label="New temporary password" hint="At least 6 characters. Share it privately.">
+        <Field label={t('New temporary password')} hint={t('At least 6 characters. Share it privately.')}>
           <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
         </Field>
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

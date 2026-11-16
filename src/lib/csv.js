@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { PROGRAMS, STATUS } from './constants.js';
 import { getProgress } from './patients.js';
+import { t } from './i18n-core.js';
 
 const escape = (v) => {
   const s = v == null ? '' : String(v);
@@ -10,9 +11,9 @@ const escape = (v) => {
 export function exportPatientsCsv(patients, doctorName, program) {
   const TREATMENT_STEPS = PROGRAMS[program].steps;
   const header = [
-    'Patient', 'Phone', 'Doctor', 'Status', 'Progress (%)', 'Last Activity', 'Treatment Ends At',
-    ...TREATMENT_STEPS.flatMap((s) => [s.label, `${s.label} Note`]),
-    'Patient Notes',
+    ...['Patient', 'Phone', 'Doctor', 'Status', 'Progress (%)', 'Last Activity', 'Treatment Ends At'].map((h) => t(h)),
+    ...TREATMENT_STEPS.flatMap((s) => [s.label, t('{step} note', { step: s.label })]),
+    t('Patient Notes'),
   ];
   const rows = patients.map((p) => {
     const pr = getProgress(p);

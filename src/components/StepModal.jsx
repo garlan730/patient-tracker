@@ -5,6 +5,7 @@ import { findOutOfOrder } from '../lib/patients.js';
 import { fmtDateTime, todayISO } from '../lib/dates.js';
 import { useData } from '../lib/data.jsx';
 import { Button, Field, Input, Modal, Textarea, useConfirm } from './ui.jsx';
+import { t } from '../lib/i18n.jsx';
 
 // Edit the date + note for a single treatment step. `target` = { patient, stepId } or null.
 export default function StepModal({ target, onClose }) {
@@ -39,9 +40,9 @@ export default function StepModal({ target, onClose }) {
 
   const handleClear = async () => {
     const ok = await confirm({
-      title: 'Clear this step?',
-      message: `Remove the ${step.label} date and note for ${target.patient.name}.`,
-      confirmLabel: 'Clear',
+      title: t('Clear this step?'),
+      message: t('Remove the {step} date and note for {name}.', { step: step.label, name: target.patient.name }),
+      confirmLabel: t('Clear'),
       danger: true,
     });
     if (ok) {
@@ -58,38 +59,38 @@ export default function StepModal({ target, onClose }) {
       footer={
         <>
           {current?.date && (
-            <Button variant="danger-ghost" className="mr-auto" onClick={handleClear}>Clear step</Button>
+            <Button variant="danger-ghost" className="mr-auto" onClick={handleClear}>{t('Clear step')}</Button>
           )}
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="step-form" disabled={!date}>Save</Button>
+          <Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button>
+          <Button type="submit" form="step-form" disabled={!date}>{t('Save')}</Button>
         </>
       }
     >
       <form id="step-form" onSubmit={handleSave} className="space-y-4">
-        <Field label="Date">
+        <Field label={t('Date')}>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required autoFocus />
         </Field>
         {outOfOrder && (
           <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            This date is out of order with {outOfOrder}. Double-check before saving.
+            {t('This date is out of order with {step}. Double-check before saving.', { step: outOfOrder })}
           </p>
         )}
-        <Field label="Note" hint="Optional — e.g. shade used, complications, next appointment.">
-          <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note for this step…" />
+        <Field label={t('Note')} hint={t('Optional — e.g. shade used, complications, next appointment.')}>
+          <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('Add a note for this step…')} />
         </Field>
         {!isProgramEnd && (
           <label className="flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700">
             <input type="checkbox" className="mt-0.5 accent-brand-600" checked={endsHere} onChange={(e) => setEndsHere(e.target.checked)} />
             <span>
-              Treatment ends at this step
-              <span className="block text-xs text-slate-500">The patient is done after {step.label}; later steps aren't needed.</span>
+              {t('Treatment ends at this step')}
+              <span className="block text-xs text-slate-500">{t("The patient is done after {step}; later steps aren't needed.", { step: step.label })}</span>
             </span>
           </label>
         )}
         {current?.updatedBy && (
           <p className="text-xs text-slate-400">
-            Last updated by {current.updatedBy} · {fmtDateTime(current.updatedAt)}
+            {t('Last updated by {name}', { name: current.updatedBy })} · {fmtDateTime(current.updatedAt)}
           </p>
         )}
       </form>

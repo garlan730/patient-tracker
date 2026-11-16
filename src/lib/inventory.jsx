@@ -15,6 +15,8 @@ import {
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { db, friendlyError } from './firebase.js';
+import { t } from './i18n-core.js';
+import { fmt } from './dates.js';
 import { useAuth } from './auth.jsx';
 
 // Firestore layout:
@@ -25,16 +27,16 @@ import { useAuth } from './auth.jsx';
 //   settings/inventory              { whatsappNumber }
 
 export const STOCK_REASONS = {
-  used: { label: 'Used', sign: -1 },
-  received: { label: 'Received', sign: 1 },
-  correction: { label: 'Stock count correction', sign: 0 },
+  used: { get label() { return t('Used'); }, sign: -1 },
+  received: { get label() { return t('Received'); }, sign: 1 },
+  correction: { get label() { return t('Stock count correction'); }, sign: 0 },
 };
 
 export const REQUEST_STATUS = {
-  requested: { label: 'Requested', className: 'bg-amber-50 text-amber-700 ring-amber-200' },
-  ordered: { label: 'Ordered', className: 'bg-sky-50 text-sky-700 ring-sky-200' },
-  received: { label: 'Received', className: 'bg-brand-50 text-brand-700 ring-brand-200' },
-  cancelled: { label: 'Cancelled', className: 'bg-slate-100 text-slate-500 ring-slate-200' },
+  requested: { get label() { return t('Requested'); }, className: 'bg-amber-50 text-amber-700 ring-amber-200' },
+  ordered: { get label() { return t('Ordered'); }, className: 'bg-sky-50 text-sky-700 ring-sky-200' },
+  received: { get label() { return t('Received'); }, className: 'bg-brand-50 text-brand-700 ring-brand-200' },
+  cancelled: { get label() { return t('Cancelled'); }, className: 'bg-slate-100 text-slate-500 ring-slate-200' },
 };
 
 // Items without a minimum (0) are never flagged, so a freshly imported list isn't all red.
@@ -50,14 +52,14 @@ export function normalizeWhatsapp(input = '') {
 
 export function requestMessage(req, clinicName) {
   const lines = [
-    `*Material Request ${req.number}*`,
+    `*${t('Material Request')} ${req.number}*`,
     clinicName,
-    `Date: ${format(new Date(req.createdAt), 'dd MMM yyyy, HH:mm')}`,
-    `Requested by: ${req.requestedBy}`,
+    `${t('Date')}: ${fmt(new Date(req.createdAt), 'dd MMM yyyy, HH:mm')}`,
+    `${t('Requested by')}: ${req.requestedBy}`,
     '',
     ...req.items.map((it, i) => `${i + 1}. ${it.name} — ${it.qty} ${it.unit}`),
   ];
-  if (req.note) lines.push('', `Note: ${req.note}`);
+  if (req.note) lines.push('', `${t('Note')}: ${req.note}`);
   return lines.join('\n');
 }
 
@@ -125,7 +127,7 @@ export function InventoryProvider({ children }) {
       await runTransaction(db, async (tx) => {
         tx.set(ref, { ...fields, stock, updatedAt: at, updatedBy: user.name });
         tx.set(doc(collection(db, 'inventory', ref.id, 'history')), {
-          change: stock, stockAfter: stock, reason: 'correction', note: 'Initial stock', by: user.name, byId: user.id, at,
+          change: stock, stockAfter: stock, reason: 'correction', note: t('Initial stock'), by: user.name, byId: user.id, at,
         });
       });
     }
@@ -154,7 +156,7 @@ export function InventoryProvider({ children }) {
         });
         if (stock) {
           batch.set(doc(collection(db, 'inventory', ref.id, 'history')), {
-            change: stock, stockAfter: stock, reason: 'correction', note: 'Imported', by: user.name, byId: user.id, at,
+            change: stock, stockAfter: stock, reason: 'correction', note: t('Imported'), by: user.name, byId: user.id, at,
           });
         }
       }
@@ -170,11 +172,11 @@ export function InventoryProvider({ children }) {
     runTransaction(db, async (tx) => {
       const ref = doc(db, 'inventory', id);
       const snap = await tx.get(ref);
-      if (!snap.exists()) throw new Error('This item no longer exists.');
+      if (!snap.exists()) throw new Error(t('This item no longer exists.'));
       const before = snap.data().stock || 0;
       const qty = Math.abs(Number(amount) || 0);
       const after = reason === 'correction' ? qty : before + STOCK_REASONS[reason].sign * qty;
-      if (after < 0) throw new Error(`Only ${before} in stock — can't use ${qty}.`);
+      if (after < 0) throw new Error(t("Only {before} in stock — can't use {qty}.", { before, qty }));
       const at = new Date().toISOString();
       tx.update(ref, { stock: after, updatedAt: at, updatedBy: user.name });
       tx.set(doc(collection(db, 'inventory', id, 'history')), {
@@ -210,7 +212,7 @@ export function InventoryProvider({ children }) {
     runTransaction(db, async (tx) => {
       const ref = doc(db, 'inventoryRequests', req.id);
       const snap = await tx.get(ref);
-      if (snap.data()?.status === 'received') throw new Error('This request was already received.');
+      if (snap.data()?.status === 'received') throw new Error(t('This request was already received.'));
       const at = new Date().toISOString();
       const changes = { status, updatedAt: at, [`${status}At`]: at, [`${status}By`]: user.name };
       if (status === 'received') {
@@ -223,7 +225,7 @@ export function InventoryProvider({ children }) {
           const after = (s.data().stock || 0) + qty;
           tx.update(itemRefs[i], { stock: after, updatedAt: at, updatedBy: user.name });
           tx.set(doc(collection(db, 'inventory', s.id, 'history')), {
-            change: qty, stockAfter: after, reason: 'received', note: `Request ${req.number}`, by: user.name, byId: user.id, at,
+            change: qty, stockAfter: after, reason: 'received', note: `${t('Request')} ${req.number}`, by: user.name, byId: user.id, at,
           });
         });
       }

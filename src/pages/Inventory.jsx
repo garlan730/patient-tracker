@@ -8,6 +8,7 @@ import {
   REQUEST_STATUS, STOCK_REASONS, isLow, normalizeWhatsapp, requestMessage, useInventory, whatsappUrl,
 } from '../lib/inventory.jsx';
 import { fmtDateTime } from '../lib/dates.js';
+import { t } from '../lib/i18n.jsx';
 import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Select, Textarea, cx, useConfirm } from '../components/ui.jsx';
 
 const CLINIC = 'Klinik Utama Baruga Medical Center';
@@ -22,11 +23,11 @@ export default function Inventory() {
   return (
     <>
       <PageHeader
-        title="Inventory"
-        description="Material stock, updates and requests."
+        title={t('Inventory')}
+        description={t('Material stock, updates and requests.')}
         actions={
           <Button onClick={() => setRequesting(lowStock.map((it) => ({ itemId: it.id, qty: Math.max(1, (it.minStock || 0) * 2 - it.stock) })))}>
-            <Send size={16} /> Request materials
+            <Send size={16} /> {t('Request materials')}
           </Button>
         }
       />
@@ -35,14 +36,14 @@ export default function Inventory() {
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
           <AlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span className="flex-1">{error}</span>
-          <button onClick={clearError} aria-label="Dismiss" className="text-red-400 hover:text-red-700"><X size={16} /></button>
+          <button onClick={clearError} aria-label={t('Dismiss')} className="text-red-400 hover:text-red-700"><X size={16} /></button>
         </div>
       )}
 
       <div className="mb-4 flex gap-1 border-b border-slate-200" role="tablist">
         {[
-          ['stock', 'Stock', lowStock.length ? `${lowStock.length} low` : null],
-          ['requests', 'Requests', open ? `${open} open` : null],
+          ['stock', t('Stock'), lowStock.length ? t('{n} low', { n: lowStock.length }) : null],
+          ['requests', t('Requests'), open ? t('{n} open', { n: open }) : null],
         ].map(([key, label, badge]) => (
           <button
             key={key}
@@ -62,7 +63,7 @@ export default function Inventory() {
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-24 text-sm text-slate-400">
-          <Loader2 size={18} className="animate-spin" /> Loading inventory…
+          <Loader2 size={18} className="animate-spin" /> {t('Loading inventory…')}
         </div>
       ) : tab === 'stock' ? (
         <StockTab onRequest={(lines) => setRequesting(lines)} />
@@ -96,7 +97,7 @@ function StockTab({ onRequest }) {
     .sort((a, b) => Number(isLow(b)) - Number(isLow(a)) || a.name.localeCompare(b.name));
 
   const remove = async (item) => {
-    if (await confirm({ title: 'Delete item?', message: `${item.name} and its stock history will be removed from the list.`, confirmLabel: 'Delete', danger: true })) {
+    if (await confirm({ title: t('Delete item?'), message: t('{name} and its stock history will be removed from the list.', { name: item.name }), confirmLabel: t('Delete'), danger: true })) {
       deleteItem(item.id);
     }
   };
@@ -107,35 +108,35 @@ function StockTab({ onRequest }) {
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="relative flex-1">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input className="pl-9" placeholder="Search materials…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input className="pl-9" placeholder={t('Search materials…')} value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
-          <Select className="md:w-48" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category">
-            <option value="">All categories</option>
+          <Select className="md:w-48" value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t('Category')}>
+            <option value="">{t('All categories')}</option>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
           <label className="flex items-center gap-2 whitespace-nowrap px-1 text-sm text-slate-600">
             <input type="checkbox" className="accent-brand-600" checked={lowOnly} onChange={(e) => setLowOnly(e.target.checked)} />
-            Low stock only
+            {t('Low stock only')}
           </label>
-          {isAdmin && <Button variant="secondary" onClick={() => setEditing({})}><Plus size={16} /> Add item</Button>}
+          {isAdmin && <Button variant="secondary" onClick={() => setEditing({})}><Plus size={16} /> {t('Add item')}</Button>}
         </div>
       </Card>
 
       <Card className="overflow-hidden">
         {rows.length === 0 ? (
-          <EmptyState icon={Package} title={items.length ? 'No items match' : 'No materials yet'}>
-            {items.length ? 'Try a different search or filter.' : isAdmin ? 'Add your first item to start tracking stock.' : 'Ask an admin to add the materials list.'}
+          <EmptyState icon={Package} title={items.length ? t('No items match') : t('No materials yet')}>
+            {items.length ? t('Try a different search or filter.') : isAdmin ? t('Add your first item to start tracking stock.') : t('Ask an admin to add the materials list.')}
           </EmptyState>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Material</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3 text-right">In stock</th>
-                  <th className="px-4 py-3 text-right">Minimum</th>
-                  <th className="px-4 py-3">Last update</th>
+                  <th className="px-4 py-3">{t('Material')}</th>
+                  <th className="px-4 py-3">{t('Category')}</th>
+                  <th className="px-4 py-3 text-right">{t('In stock')}</th>
+                  <th className="px-4 py-3 text-right">{t('Minimum')}</th>
+                  <th className="px-4 py-3">{t('Last update')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -148,7 +149,7 @@ function StockTab({ onRequest }) {
                       <td className="px-4 py-3 text-slate-600">{it.category || '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <span className={cx('inline-flex items-center gap-1 tabular-nums', low ? 'font-semibold text-red-700' : 'text-slate-800')}>
-                          {low && <AlertTriangle size={13} aria-label="Low stock" />}
+                          {low && <AlertTriangle size={13} aria-label={t('Low stock')} />}
                           {it.stock} <span className="font-normal text-slate-500">{it.unit}</span>
                         </span>
                       </td>
@@ -156,11 +157,11 @@ function StockTab({ onRequest }) {
                       <td className="px-4 py-3 text-xs text-slate-500">{it.updatedAt ? `${fmtDateTime(it.updatedAt)} · ${it.updatedBy}` : '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="secondary" onClick={() => setAdjusting(it)}>Update stock</Button>
-                          {low && <Button size="icon" variant="ghost" title="Request this item" aria-label="Request this item" onClick={() => onRequest([{ itemId: it.id, qty: Math.max(1, it.minStock * 2 - it.stock) }])}><Send size={15} /></Button>}
-                          <Button size="icon" variant="ghost" title="Stock history" aria-label="Stock history" onClick={() => setHistory(it)}><History size={15} /></Button>
-                          {isAdmin && <Button size="icon" variant="ghost" title="Edit item" aria-label="Edit item" onClick={() => setEditing(it)}><Pencil size={15} /></Button>}
-                          {isAdmin && <Button size="icon" variant="danger-ghost" title="Delete item" aria-label="Delete item" onClick={() => remove(it)}><Trash2 size={15} /></Button>}
+                          <Button size="sm" variant="secondary" onClick={() => setAdjusting(it)}>{t('Update stock')}</Button>
+                          {low && <Button size="icon" variant="ghost" title={t('Request this item')} aria-label={t('Request this item')} onClick={() => onRequest([{ itemId: it.id, qty: Math.max(1, it.minStock * 2 - it.stock) }])}><Send size={15} /></Button>}
+                          <Button size="icon" variant="ghost" title={t('Stock history')} aria-label={t('Stock history')} onClick={() => setHistory(it)}><History size={15} /></Button>
+                          {isAdmin && <Button size="icon" variant="ghost" title={t('Edit item')} aria-label={t('Edit item')} onClick={() => setEditing(it)}><Pencil size={15} /></Button>}
+                          {isAdmin && <Button size="icon" variant="danger-ghost" title={t('Delete item')} aria-label={t('Delete item')} onClick={() => remove(it)}><Trash2 size={15} /></Button>}
                         </div>
                       </td>
                     </tr>
@@ -199,7 +200,7 @@ function ItemModal({ item, categories, onClose }) {
   const submit = async (e) => {
     e.preventDefault();
     const dup = items.some((i) => i.id !== item.id && i.name.trim().toLowerCase() === form.name.trim().toLowerCase());
-    if (dup) return setError('An item with that name already exists.');
+    if (dup) return setError(t('An item with that name already exists.'));
     setBusy(true);
     try {
       await saveItem(item.id, form);
@@ -215,27 +216,27 @@ function ItemModal({ item, categories, onClose }) {
     <Modal
       open={!!item}
       onClose={onClose}
-      title={isNew ? 'Add material' : 'Edit material'}
-      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" form="item-form" disabled={busy}>{isNew ? 'Add item' : 'Save'}</Button></>}
+      title={isNew ? t('Add material') : t('Edit material')}
+      footer={<><Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button><Button type="submit" form="item-form" disabled={busy}>{isNew ? t('Add item') : t('Save')}</Button></>}
     >
       <form id="item-form" onSubmit={submit} className="space-y-4">
-        <Field label="Name"><Input value={form.name || ''} onChange={set('name')} placeholder="e.g. Implant fixture 4.0 × 10 mm" required autoFocus /></Field>
+        <Field label={t('Name')}><Input value={form.name || ''} onChange={set('name')} placeholder={t('e.g. Implant fixture 4.0 × 10 mm')} required autoFocus /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Category">
-            <Input value={form.category || ''} onChange={set('category')} list="inventory-categories" placeholder="e.g. Implant" />
+          <Field label={t('Category')}>
+            <Input value={form.category || ''} onChange={set('category')} list="inventory-categories" placeholder={t('e.g. Implant')} />
             <datalist id="inventory-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
           </Field>
-          <Field label="Unit"><Input value={form.unit || ''} onChange={set('unit')} placeholder="pcs, box, ml…" required /></Field>
+          <Field label={t('Unit')}><Input value={form.unit || ''} onChange={set('unit')} placeholder={t('pcs, box, ml…')} required /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Minimum stock" hint="At or below this, it's flagged as low. 0 = no alert.">
+          <Field label={t('Minimum stock')} hint={t("At or below this, it's flagged as low. 0 = no alert.")}>
             <Input type="number" min="0" value={form.minStock} onChange={set('minStock')} required />
           </Field>
           {isNew && (
-            <Field label="Current stock"><Input type="number" min="0" value={form.stock} onChange={set('stock')} required /></Field>
+            <Field label={t('Current stock')}><Input type="number" min="0" value={form.stock} onChange={set('stock')} required /></Field>
           )}
         </div>
-        {!isNew && <p className="text-xs text-slate-500">To change the stock amount, use <b>Update stock</b> so it's recorded in the history.</p>}
+        {!isNew && <p className="text-xs text-slate-500">{t('To change the stock amount, use')} <b>{t('Update stock')}</b> {t("so it's recorded in the history.")}</p>}
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </form>
     </Modal>
@@ -265,7 +266,7 @@ function AdjustModal({ item, onClose }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (amount === '' || (reason !== 'correction' && qty === 0)) return setError('Enter an amount.');
+    if (amount === '' || (reason !== 'correction' && qty === 0)) return setError(t('Enter an amount.'));
     setBusy(true);
     try {
       await adjustStock(live.id, reason, qty, note);
@@ -281,11 +282,11 @@ function AdjustModal({ item, onClose }) {
     <Modal
       open
       onClose={onClose}
-      title={`Update stock · ${live.name}`}
-      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" form="adjust-form" disabled={busy || after < 0}>Save</Button></>}
+      title={`${t('Update stock')} · ${live.name}`}
+      footer={<><Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button><Button type="submit" form="adjust-form" disabled={busy || after < 0}>{t('Save')}</Button></>}
     >
       <form id="adjust-form" onSubmit={submit} className="space-y-4">
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Type of change">
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t('Type of change')}>
           {[
             ['used', 'Used', Minus],
             ['received', 'Received', Plus],
@@ -302,18 +303,18 @@ function AdjustModal({ item, onClose }) {
                 reason === key ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
               )}
             >
-              <Icon size={14} /> {label}
+              <Icon size={14} /> {t(label)}
             </button>
           ))}
         </div>
-        <Field label={reason === 'correction' ? `Counted stock (${live.unit})` : `Amount (${live.unit})`}>
+        <Field label={reason === 'correction' ? t('Counted stock ({unit})', { unit: live.unit }) : t('Amount ({unit})', { unit: live.unit })}>
           <Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required autoFocus />
         </Field>
         <p className={cx('rounded-lg px-3 py-2 text-sm', after < 0 ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-600')}>
           {live.stock} {live.unit} → <b>{after} {live.unit}</b>
-          {after < 0 && ' — not enough stock'}
+          {after < 0 && ` — ${t('not enough stock')}`}
         </p>
-        <Field label="Note" hint="Optional — e.g. patient name, supplier, invoice number.">
+        <Field label={t('Note')} hint={t('Optional — e.g. patient name, supplier, invoice number.')}>
           <Input value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
@@ -335,13 +336,13 @@ function HistoryModal({ item, onClose }) {
   }, [item, loadHistory]);
 
   return (
-    <Modal open={!!item} onClose={onClose} title={`Stock history · ${item?.name}`}>
+    <Modal open={!!item} onClose={onClose} title={`${t('Stock history')} · ${item?.name}`}>
       {error ? (
         <p className="text-sm text-red-700">{error}</p>
       ) : !rows ? (
-        <p className="flex items-center gap-2 text-sm text-slate-400"><Loader2 size={14} className="animate-spin" /> Loading…</p>
+        <p className="flex items-center gap-2 text-sm text-slate-400"><Loader2 size={14} className="animate-spin" /> {t('Loading…')}</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-slate-400">No changes recorded yet.</p>
+        <p className="text-sm text-slate-400">{t('No changes recorded yet.')}</p>
       ) : (
         <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-y-auto">
           {rows.map((h) => (
@@ -375,16 +376,16 @@ function WhatsappSettings() {
     e.preventDefault();
     const normalized = normalizeWhatsapp(number);
     await saveSettings({ whatsappNumber: normalized });
-    setSaved(normalized ? `Saved. Requests go to +${normalized}.` : 'Cleared.');
+    setSaved(normalized ? t('Saved. Requests go to +{number}.', { number: normalized }) : t('Cleared.'));
   };
 
   return (
     <Card className="mt-6 p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><MessageCircle size={16} /> WhatsApp for material requests</h2>
-      <p className="mt-1 text-sm text-slate-600">The number requests are sent to (e.g. purchasing or the supplier). Admins only.</p>
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><MessageCircle size={16} /> {t('WhatsApp for material requests')}</h2>
+      <p className="mt-1 text-sm text-slate-600">{t('The number requests are sent to (e.g. purchasing or the supplier). Admins only.')}</p>
       <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <Input type="tel" value={number} onChange={(e) => { setNumber(e.target.value); setSaved(''); }} placeholder="e.g. 0812-3456-7890" className="sm:w-64" />
-        <Button type="submit" variant="secondary">Save number</Button>
+        <Input type="tel" value={number} onChange={(e) => { setNumber(e.target.value); setSaved(''); }} placeholder={t('e.g. 0812-3456-7890')} className="sm:w-64" />
+        <Button type="submit" variant="secondary">{t('Save number')}</Button>
       </form>
       {saved && <p className="mt-2 text-sm text-brand-700">{saved}</p>}
     </Card>
@@ -407,7 +408,7 @@ function ImportItems() {
       if (data.format !== 'inventory-import' || !Array.isArray(data.items)) throw new Error('This is not an inventory import file.');
       setFile({ name: f.name, source: data.source, items: data.items });
     } catch (err) {
-      setStatus({ busy: false, error: err instanceof SyntaxError ? 'Could not read the file (invalid JSON).' : err.message, result: '' });
+      setStatus({ busy: false, error: err instanceof SyntaxError ? t('Could not read the file (invalid JSON).') : err.message, result: '' });
     }
   };
 
@@ -415,7 +416,7 @@ function ImportItems() {
     setStatus({ busy: true, error: '', result: '' });
     try {
       const { added, skipped } = await importItems(file.items);
-      setStatus({ busy: false, error: '', result: `Imported ${added} item${added === 1 ? '' : 's'}${skipped ? `; skipped ${skipped} already in the list` : ''}.` });
+      setStatus({ busy: false, error: '', result: skipped ? t('Imported {n} item(s); skipped {skipped} already in the list.', { n: added, skipped }) : t('Imported {n} item(s).', { n: added }) });
       setFile(null);
     } catch (err) {
       setStatus({ busy: false, error: err.message, result: '' });
@@ -426,23 +427,23 @@ function ImportItems() {
 
   return (
     <Card className="mt-6 p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Upload size={16} /> Import items</h2>
-      <p className="mt-1 text-sm text-slate-600">Add many materials at once from an import file. Names already in the list are skipped.</p>
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900"><Upload size={16} /> {t('Import items')}</h2>
+      <p className="mt-1 text-sm text-slate-600">{t('Add many materials at once from an import file. Names already in the list are skipped.')}</p>
       {file ? (
         <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
           <p className="font-medium">{file.name}</p>
           {file.source && <p className="text-xs text-slate-500">{file.source}</p>}
-          <p className="mt-1 text-slate-600">{file.items.length} items in {categories} categories.</p>
+          <p className="mt-1 text-slate-600">{t('{n} items in {c} categories.', { n: file.items.length, c: categories })}</p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={run} disabled={status.busy}>
-              {status.busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Import {file.items.length} items
+              {status.busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {t('Import {n} items', { n: file.items.length })}
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => setFile(null)} disabled={status.busy}>Cancel</Button>
+            <Button size="sm" variant="secondary" onClick={() => setFile(null)} disabled={status.busy}>{t('Cancel')}</Button>
           </div>
         </div>
       ) : (
         <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50">
-          <Upload size={14} /> Choose import file…
+          <Upload size={14} /> {t('Choose import file…')}
           <input type="file" accept=".json,application/json" className="hidden" onChange={pick} />
         </label>
       )}
@@ -475,8 +476,8 @@ function RequestModal({ lines, onClose }) {
   const submit = (e) => {
     e.preventDefault();
     const filled = rows.filter((r) => r.itemId && Number(r.qty) > 0);
-    if (!filled.length) return setError('Add at least one material with a quantity.');
-    if (!number) return setError(isAdmin ? 'Set the WhatsApp number at the bottom of the Stock tab first.' : 'No WhatsApp number is set yet. Ask an admin to add it.');
+    if (!filled.length) return setError(t('Add at least one material with a quantity.'));
+    if (!number) return setError(isAdmin ? t('Set the WhatsApp number at the bottom of the Stock tab first.') : t('No WhatsApp number is set yet. Ask an admin to add it.'));
     const withNames = filled.map((r) => {
       const it = items.find((x) => x.id === r.itemId);
       return { ...r, name: it.name, unit: it.unit };
@@ -484,7 +485,7 @@ function RequestModal({ lines, onClose }) {
     const { req, saved } = createRequest(withNames, note);
     // Open WhatsApp straight from the click so the browser doesn't block it as a pop-up.
     window.open(whatsappUrl(number, requestMessage(req, CLINIC)), '_blank', 'noopener');
-    saved.catch((err) => setError(`Request not saved: ${err.message}`));
+    saved.catch((err) => setError(t('Request not saved: {error}', { error: err.message })));
     onClose();
   };
 
@@ -492,8 +493,8 @@ function RequestModal({ lines, onClose }) {
     <Modal
       open={!!lines}
       onClose={onClose}
-      title="Request materials"
-      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" form="request-form"><Send size={14} /> Send on WhatsApp</Button></>}
+      title={t('Request materials')}
+      footer={<><Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button><Button type="submit" form="request-form"><Send size={14} /> {t('Send on WhatsApp')}</Button></>}
     >
       <form id="request-form" onSubmit={submit} className="space-y-3">
         <MaterialSearch items={items} exclude={rows.map((r) => r.itemId)} onPick={add} />
@@ -508,13 +509,13 @@ function RequestModal({ lines, onClose }) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium leading-snug text-slate-800">{it.name}</p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {it.stock} {it.unit} in stock{isLow(it) && <span className="font-medium text-red-600"> · low</span>}
+                        {t('{n} {unit} in stock', { n: it.stock, unit: it.unit })}{isLow(it) && <span className="font-medium text-red-600"> · {t('low')}</span>}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
-                      aria-label={`Remove ${it.name}`}
+                      aria-label={t('Remove {name}', { name: it.name })}
                       className="-mr-1 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600 sm:order-last"
                     >
                       <X size={16} />
@@ -523,7 +524,7 @@ function RequestModal({ lines, onClose }) {
                   <QtyStepper
                     value={row.qty}
                     unit={it.unit}
-                    label={`Quantity of ${it.name}`}
+                    label={t('Quantity of {name}', { name: it.name })}
                     onChange={(qty) => update(i, { qty })}
                   />
                 </li>
@@ -531,13 +532,13 @@ function RequestModal({ lines, onClose }) {
             })}
           </ul>
         ) : (
-          <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400">Search above to add materials.</p>
+          <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400">{t('Search above to add materials.')}</p>
         )}
-        <Field label="Note" hint="Optional — e.g. urgent, needed by Friday.">
+        <Field label={t('Note')} hint={t('Optional — e.g. urgent, needed by Friday.')}>
           <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
         <p className="text-xs text-slate-500">
-          {number ? <>WhatsApp opens with the request filled in for <b>+{number}</b>; tap <b>Send</b> there.</> : 'No WhatsApp number set yet.'}
+          {number ? <>{t('WhatsApp opens with the request filled in for')} <b>+{number}</b>; {t('tap')} <b>{t('Send')}</b> {t('there.')}</> : t('No WhatsApp number set yet.')}
         </p>
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       </form>
@@ -552,7 +553,7 @@ function QtyStepper({ value, unit, label, onChange }) {
   return (
     <div className="flex shrink-0 items-center gap-2">
       <div className="flex items-center overflow-hidden rounded-lg border border-slate-300 bg-white">
-        <button type="button" className={btn} onClick={() => onChange(String(Math.max(1, n - 1)))} disabled={n <= 1} aria-label="Decrease">
+        <button type="button" className={btn} onClick={() => onChange(String(Math.max(1, n - 1)))} disabled={n <= 1} aria-label={t('Decrease')}>
           <Minus size={14} />
         </button>
         <input
@@ -565,7 +566,7 @@ function QtyStepper({ value, unit, label, onChange }) {
           aria-label={label}
           className="h-9 w-12 border-x border-slate-300 text-center text-base tabular-nums sm:text-sm focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
         />
-        <button type="button" className={btn} onClick={() => onChange(String(n + 1))} aria-label="Increase">
+        <button type="button" className={btn} onClick={() => onChange(String(n + 1))} aria-label={t('Increase')}>
           <Plus size={14} />
         </button>
       </div>
@@ -611,11 +612,11 @@ function MaterialSearch({ items, exclude, onPick }) {
 
   return (
     <div className="relative">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700">Add materials</span>
+      <span className="mb-1.5 block text-sm font-medium text-slate-700">{t('Add materials')}</span>
       <Search size={16} className="pointer-events-none absolute bottom-2.5 left-3 text-slate-400" />
       <Input
         className="pl-9"
-        placeholder="Search by name or category…"
+        placeholder={t('Search by name or category…')}
         value={q}
         onChange={(e) => { setQ(e.target.value); setOpen(true); setActive(0); }}
         onFocus={() => setOpen(true)}
@@ -631,7 +632,7 @@ function MaterialSearch({ items, exclude, onPick }) {
       {open && (q || matches.length > 0) && (
         <ul id="material-results" role="listbox" className="absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
           {matches.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-slate-400">No materials match “{q}”.</li>
+            <li className="px-3 py-2 text-sm text-slate-400">{t('No materials match “{q}”.', { q })}</li>
           ) : (
             matches.map((it, i) => (
               <li
@@ -644,10 +645,10 @@ function MaterialSearch({ items, exclude, onPick }) {
               >
                 <span className="min-w-0">
                   <span className="block truncate text-slate-800">{it.name}</span>
-                  <span className="block text-xs text-slate-500">{it.category || 'No category'}</span>
+                  <span className="block text-xs text-slate-500">{it.category || t('No category')}</span>
                 </span>
                 <span className={cx('shrink-0 text-xs tabular-nums', isLow(it) ? 'font-medium text-red-600' : 'text-slate-500')}>
-                  {it.stock} {it.unit}{isLow(it) ? ' · low' : ''}
+                  {it.stock} {it.unit}{isLow(it) ? ` · ${t('low')}` : ''}
                 </span>
               </li>
             ))
@@ -669,18 +670,18 @@ function RequestsTab() {
   const change = async (req, next) => {
     if (next === 'received') {
       const ok = await confirm({
-        title: 'Mark as received?',
-        message: `This adds ${req.items.map((i) => `${i.qty} ${i.unit} ${i.name}`).join(', ')} to stock.`,
-        confirmLabel: 'Mark received',
+        title: t('Mark as received?'),
+        message: t('This adds {items} to stock.', { items: req.items.map((i) => `${i.qty} ${i.unit} ${i.name}`).join(', ') }),
+        confirmLabel: t('Mark received'),
       });
       if (!ok) return;
     }
-    if (next === 'cancelled' && !(await confirm({ title: 'Cancel request?', message: `${req.number} will be marked as cancelled.`, confirmLabel: 'Cancel request', danger: true }))) return;
+    if (next === 'cancelled' && !(await confirm({ title: t('Cancel request?'), message: t('{number} will be marked as cancelled.', { number: req.number }), confirmLabel: t('Cancel request'), danger: true }))) return;
     setBusyId(req.id);
     try {
       await setRequestStatus(req, next);
     } catch (err) {
-      await confirm({ title: 'Could not update', message: err.message, confirmLabel: 'OK' });
+      await confirm({ title: t('Could not update'), message: err.message, confirmLabel: t('OK') });
     } finally {
       setBusyId(null);
     }
@@ -689,7 +690,7 @@ function RequestsTab() {
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-2">
-        {[['open', 'Open'], ['received', 'Received'], ['cancelled', 'Cancelled'], ['all', 'All']].map(([k, label]) => (
+        {[['open', t('Open')], ['received', t('Received')], ['cancelled', t('Cancelled')], ['all', t('All')]].map(([k, label]) => (
           <button
             key={k}
             onClick={() => setStatus(k)}
@@ -701,7 +702,7 @@ function RequestsTab() {
       </div>
 
       {rows.length === 0 ? (
-        <Card><EmptyState icon={Send} title="No requests here">Use “Request materials” to send one on WhatsApp.</EmptyState></Card>
+        <Card><EmptyState icon={Send} title={t('No requests here')}>{t('Use “Request materials” to send one on WhatsApp.')}</EmptyState></Card>
       ) : (
         <div className="space-y-3">
           {rows.map((r) => (
@@ -714,27 +715,27 @@ function RequestsTab() {
                   </p>
                   <p className="text-xs text-slate-500">
                     {fmtDateTime(r.createdAt)} · {r.requestedBy}
-                    {r.orderedAt && ` · ordered ${fmtDateTime(r.orderedAt)}`}
-                    {r.receivedAt && ` · received ${fmtDateTime(r.receivedAt)} by ${r.receivedBy}`}
+                    {r.orderedAt && ` · ${t('ordered {date}', { date: fmtDateTime(r.orderedAt) })}`}
+                    {r.receivedAt && ` · ${t('received {date} by {name}', { date: fmtDateTime(r.receivedAt), name: r.receivedBy })}`}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {settings.whatsappNumber && r.status !== 'cancelled' && (
                     <Button size="sm" variant="ghost" onClick={() => window.open(whatsappUrl(settings.whatsappNumber, requestMessage(r, CLINIC)), '_blank', 'noopener')}>
-                      <MessageCircle size={14} /> Resend
+                      <MessageCircle size={14} /> {t('Resend')}
                     </Button>
                   )}
-                  {r.status === 'requested' && <Button size="sm" variant="secondary" disabled={busyId === r.id} onClick={() => change(r, 'ordered')}>Mark ordered</Button>}
-                  {['requested', 'ordered'].includes(r.status) && <Button size="sm" disabled={busyId === r.id} onClick={() => change(r, 'received')}>Mark received</Button>}
+                  {r.status === 'requested' && <Button size="sm" variant="secondary" disabled={busyId === r.id} onClick={() => change(r, 'ordered')}>{t('Mark ordered')}</Button>}
+                  {['requested', 'ordered'].includes(r.status) && <Button size="sm" disabled={busyId === r.id} onClick={() => change(r, 'received')}>{t('Mark received')}</Button>}
                   {['requested', 'ordered'].includes(r.status) && (
-                    <Button size="sm" variant="danger-ghost" disabled={busyId === r.id} onClick={() => change(r, 'cancelled')}>Cancel</Button>
+                    <Button size="sm" variant="danger-ghost" disabled={busyId === r.id} onClick={() => change(r, 'cancelled')}>{t('Cancel')}</Button>
                   )}
                 </div>
               </div>
               <ul className="mt-3 space-y-1 text-sm text-slate-700">
                 {r.items.map((it, i) => <li key={i}>• {it.name} — <b>{it.qty}</b> {it.unit}</li>)}
               </ul>
-              {r.note && <p className="mt-2 text-sm text-slate-500">Note: {r.note}</p>}
+              {r.note && <p className="mt-2 text-sm text-slate-500">{t('Note')}: {r.note}</p>}
             </Card>
           ))}
         </div>

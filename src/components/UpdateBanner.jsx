@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { t } from '../lib/i18n.jsx';
 
 // The installed (home-screen) app can keep showing an old version: iPhones resume it instead of
 // reloading, and GitHub Pages lets the page be cached for 10 minutes. On start and whenever the app
@@ -43,9 +44,9 @@ export default function UpdateBanner() {
     <div className="fixed inset-x-0 bottom-0 z-[60] flex justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="flex w-full max-w-md items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-xl">
         <RefreshCw size={16} className="shrink-0" />
-        <span className="flex-1">A new version of the app is available.</span>
+        <span className="flex-1">{t('A new version of the app is available.')}</span>
         <button onClick={() => window.location.reload()} className="rounded-lg bg-white px-3 py-1.5 font-medium text-slate-900 hover:bg-slate-100">
-          Update
+          {t('Update')}
         </button>
       </div>
     </div>

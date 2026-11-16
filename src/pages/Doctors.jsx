@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Check, X, Stethoscope } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
+import { t } from '../lib/i18n.jsx';
 import { Button, Card, EmptyState, Input, PageHeader, Textarea, useConfirm } from '../components/ui.jsx';
 
 // "Sp. Pros" and "Sp.Pros" count as the same name.
@@ -24,7 +25,7 @@ export default function Doctors() {
   const handleAdd = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    if (exists(name)) return setError('A doctor with that name already exists.');
+    if (exists(name)) return setError(t('A doctor with that name already exists.'));
     addDoctor(name);
     setName('');
     setError('');
@@ -44,7 +45,9 @@ export default function Doctors() {
       toAdd.push(n);
     }
     toAdd.forEach((n) => addDoctor(n));
-    setInfo(`Added ${toAdd.length} doctor${toAdd.length === 1 ? '' : 's'}${skipped ? `, skipped ${skipped} already in the list` : ''}.`);
+    setInfo(skipped
+      ? t('Added {n} doctor(s), skipped {skipped} already in the list.', { n: toAdd.length, skipped })
+      : t('Added {n} doctor(s).', { n: toAdd.length }));
     setBulk(null);
   };
 
@@ -58,34 +61,34 @@ export default function Doctors() {
     const assigned = patients.filter((p) => p.doctorId === d.id).length;
     if (assigned) {
       await confirm({
-        title: 'Doctor has patients',
-        message: `${d.name} is assigned to ${assigned} patient(s). Reassign them before removing this doctor.`,
-        confirmLabel: 'OK',
+        title: t('Doctor has patients'),
+        message: t('{name} is assigned to {n} patient(s). Reassign them before removing this doctor.', { name: d.name, n: assigned }),
+        confirmLabel: t('OK'),
       });
       return;
     }
-    if (await confirm({ title: 'Remove doctor?', message: `Remove ${d.name} from the list?`, confirmLabel: 'Remove', danger: true })) {
+    if (await confirm({ title: t('Remove doctor?'), message: t('Remove {name} from the list?', { name: d.name }), confirmLabel: t('Remove'), danger: true })) {
       removeDoctor(d.id);
     }
   };
 
   return (
     <div className="max-w-3xl">
-      <PageHeader title="Doctors" description={isAdmin ? 'Manage the doctors patients can be assigned to.' : 'Only admins can change this list.'} />
+      <PageHeader title={t('Doctors')} description={isAdmin ? t('Manage the doctors patients can be assigned to.') : t('Only admins can change this list.')} />
 
       {isAdmin && (
         <Card className="mb-4 p-4">
           {bulk === null ? (
             <form onSubmit={handleAdd} className="flex flex-col gap-2 sm:flex-row">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. drg. Tegar Wijaya, Sp.KG" />
-              <Button type="submit" disabled={!name.trim()} className="shrink-0"><Plus size={16} /> Add doctor</Button>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. drg. Tegar Wijaya, Sp.KG')} />
+              <Button type="submit" disabled={!name.trim()} className="shrink-0"><Plus size={16} /> {t('Add doctor')}</Button>
             </form>
           ) : (
             <form onSubmit={handleBulkAdd} className="space-y-2">
-              <Textarea rows={8} value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={'One doctor per line, e.g.\ndrg. Tegar Wijaya, Sp.KG\ndrg. Sinta Rahayu, Sp.Pros'} autoFocus />
+              <Textarea rows={8} value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={t('One doctor per line, e.g.') + '\ndrg. Tegar Wijaya, Sp.KG\ndrg. Sinta Rahayu, Sp.Pros'} autoFocus />
               <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={() => setBulk(null)}>Cancel</Button>
-                <Button type="submit" disabled={!bulk.trim()}><Plus size={16} /> Add all</Button>
+                <Button variant="secondary" onClick={() => setBulk(null)}>{t('Cancel')}</Button>
+                <Button type="submit" disabled={!bulk.trim()}><Plus size={16} /> {t('Add all')}</Button>
               </div>
             </form>
           )}
@@ -93,7 +96,7 @@ export default function Doctors() {
           {info && <p className="mt-2 text-sm text-brand-700">{info}</p>}
           {bulk === null && (
             <button type="button" onClick={() => { setBulk(''); setInfo(''); setError(''); }} className="mt-2 text-sm text-slate-500 hover:text-brand-700">
-              Add several at once…
+              {t('Add several at once…')}
             </button>
           )}
         </Card>
@@ -101,7 +104,7 @@ export default function Doctors() {
 
       <Card>
         {doctors.length === 0 ? (
-          <EmptyState icon={Stethoscope} title="No doctors yet" />
+          <EmptyState icon={Stethoscope} title={t('No doctors yet')} />
         ) : (
           <ul className="divide-y divide-slate-100">
             {doctors.map((d) => (
@@ -117,21 +120,21 @@ export default function Doctors() {
                       onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditing(null); }}
                       autoFocus
                     />
-                    <Button size="icon" variant="ghost" onClick={saveEdit} aria-label="Save"><Check size={16} /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(null)} aria-label="Cancel"><X size={16} /></Button>
+                    <Button size="icon" variant="ghost" onClick={saveEdit} aria-label={t('Save')}><Check size={16} /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(null)} aria-label={t('Cancel')}><X size={16} /></Button>
                   </>
                 ) : (
                   <>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-800">{d.name}</p>
                       <Link to={`/tracker?doctor=${d.id}`} className="text-xs text-slate-500 hover:text-brand-700 hover:underline">
-                        {countFor(d.id)} active patient{countFor(d.id) === 1 ? '' : 's'}
+                        {t(countFor(d.id) === 1 ? '{n} active patient' : '{n} active patients', { n: countFor(d.id) })}
                       </Link>
                     </div>
                     {isAdmin && (
                       <>
-                        <Button size="icon" variant="ghost" onClick={() => setEditing({ id: d.id, name: d.name })} aria-label="Edit"><Pencil size={15} /></Button>
-                        <Button size="icon" variant="danger-ghost" onClick={() => handleRemove(d)} aria-label="Remove"><Trash2 size={15} /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => setEditing({ id: d.id, name: d.name })} aria-label={t('Edit')}><Pencil size={15} /></Button>
+                        <Button size="icon" variant="danger-ghost" onClick={() => handleRemove(d)} aria-label={t('Remove')}><Trash2 size={15} /></Button>
                       </>
                     )}
                   </>

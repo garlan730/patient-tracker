@@ -12,6 +12,7 @@ import {
   updatePassword,
 } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { t } from './i18n-core.js';
 import { USERNAME_PATTERN, auth, db, firebaseConfig, friendlyError, loginName, toLoginEmail } from './firebase.js';
 
 // Sign-in is Firebase Auth with a username (or email) + password; see toLoginEmail. Each person also needs a `users/{uid}` document
@@ -45,8 +46,8 @@ export function AuthProvider({ children }) {
         if (!data || !data.active) {
           setAuthError(
             data
-              ? 'Your account has been deactivated. Contact an admin.'
-              : 'This account has no access to the Patient Tracker yet. Ask an admin to add you.'
+              ? t('Your account has been deactivated. Contact an admin.')
+              : t('This account has no access to the Patient Tracker yet. Ask an admin to add you.')
           );
           setProfile(null);
           signOut(auth);
@@ -98,7 +99,7 @@ export function AuthProvider({ children }) {
   const addUser = useCallback(async ({ name, username, role, password }) => {
     const login = username.trim().toLowerCase();
     if (!login.includes('@') && !USERNAME_PATTERN.test(login)) {
-      throw new Error('Username must be 3–30 characters: lowercase letters, numbers, dot, dash or underscore.');
+      throw new Error(t('Username must be 3–30 characters: lowercase letters, numbers, dot, dash or underscore.'));
     }
     const secondary = initializeApp(firebaseConfig, `add-user-${Date.now()}`);
     try {
@@ -134,7 +135,7 @@ export function AuthProvider({ children }) {
       await updateDoc(doc(db, 'users', oldUser.id), { active: false, replacedBy: cred.user.uid });
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
-        throw new Error('The old login still exists. Delete it in the Firebase console first (step 1).');
+        throw new Error(t('The old login still exists. Delete it in the Firebase console first (step 1).'));
       }
       throw new Error(friendlyError(err));
     } finally {
@@ -149,7 +150,7 @@ export function AuthProvider({ children }) {
       await reauthenticateWithCredential(me, EmailAuthProvider.credential(me.email, currentPassword));
       await updatePassword(me, newPassword);
     } catch (err) {
-      throw new Error(err.code === 'auth/invalid-credential' ? 'Current password is incorrect.' : friendlyError(err));
+      throw new Error(err.code === 'auth/invalid-credential' ? t('Current password is incorrect.') : friendlyError(err));
     }
   }, []);
 
@@ -157,7 +158,7 @@ export function AuthProvider({ children }) {
     async (id, changes) => {
       const next = users.map((u) => (u.id === id ? { ...u, ...changes } : u));
       if (!next.some((u) => u.role === 'admin' && u.active)) {
-        throw new Error('At least one active admin is required.');
+        throw new Error(t('At least one active admin is required.'));
       }
       try {
         await updateDoc(doc(db, 'users', id), changes);

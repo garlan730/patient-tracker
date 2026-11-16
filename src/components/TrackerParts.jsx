@@ -3,6 +3,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { WAITING_DAYS, stepsFor } from '../lib/constants.js';
 import { daysSince, fmtDate } from '../lib/dates.js';
 import { cx } from './ui.jsx';
+import { t } from '../lib/i18n-core.js';
 
 // "drg. Rezki Wahyuni Syamsuddin, Sp. Pros" → "Rezki Wahyuni Syamsuddin"
 export const shortDoctor = (name = '') => name.replace(/^(drg?\.)\s*/i, '').split(',')[0].trim();
@@ -23,9 +24,9 @@ export function WaitingBadge({ days, compact }) {
   return (
     <span
       className={cx('inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ring-1 ring-inset', tone)}
-      title={days >= WAITING_DAYS.warn ? `No step recorded for ${days} days` : undefined}
+      title={days >= WAITING_DAYS.warn ? t('No step recorded for {n} days', { n: days }) : undefined}
     >
-      {compact ? `${days}d` : `${days} day${days === 1 ? '' : 's'}`}
+      {compact ? t('{n}d', { n: days }) : t(days === 1 ? '{n} day' : '{n} days', { n: days })}
     </span>
   );
 }
@@ -35,13 +36,13 @@ export function WaitingBadge({ days, compact }) {
 export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
   const steps = stepsFor(patient);
   return (
-    <div className={cx('flex w-full items-center', size === 'lg' ? 'gap-1' : 'gap-0.5')} role="list" aria-label="Treatment steps">
+    <div className={cx('flex w-full items-center', size === 'lg' ? 'gap-1' : 'gap-0.5')} role="list" aria-label={t('Treatment steps')}>
       {steps.map((s) => {
         const st = patient.steps?.[s.id];
         const done = !!st?.date;
         const next = progress.nextStep?.id === s.id;
         const skipped = !done && !progress.inPlan(s.id);
-        const label = `${s.label}: ${done ? fmtDate(st.date) : skipped ? 'not needed' : next ? 'next step' : 'not done yet'}${st?.note ? ` — ${st.note}` : ''}`;
+        const label = `${s.label}: ${done ? fmtDate(st.date) : skipped ? t('not needed') : next ? t('next step') : t('not done yet')}${st?.note ? ` — ${st.note}` : ''}`;
         return (
           <button
             key={s.id}
@@ -75,21 +76,21 @@ export function ProgressSummary({ progress }) {
   return (
     <div className="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
       <span className={lastStep ? 'text-brand-700' : 'text-slate-400'}>
-        <span className="tabular-nums">{completed} of {total}</span>
+        <span className="tabular-nums">{t('{done} of {total}', { done: completed, total })}</span>
         {' · '}
-        {lastStep ? <>Last: <span className="font-medium">{lastStep.label}</span></> : 'No steps yet'}
+        {lastStep ? <>{t('Last:')} <span className="font-medium">{lastStep.label}</span></> : t('No steps yet')}
       </span>
       {status === 'completed' ? (
-        <span className="font-medium text-brand-700">Completed</span>
+        <span className="font-medium text-brand-700">{t('Completed')}</span>
       ) : (
-        <span className="text-amber-700">Next: <span className="font-semibold">{nextStep?.label}</span></span>
+        <span className="text-amber-700">{t('Next:')} <span className="font-semibold">{nextStep?.label}</span></span>
       )}
     </div>
   );
 }
 
 // ⋯ menu rendered with fixed positioning so it isn't clipped by the scrolling table.
-export function RowMenu({ items, label = 'More actions' }) {
+export function RowMenu({ items, label = t('More actions') }) {
   const [pos, setPos] = useState(null);
   const btn = useRef(null);
   const menu = useRef(null);

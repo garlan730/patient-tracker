@@ -4,6 +4,8 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { Button, Field, Input } from '../components/ui.jsx';
 import logo from '../assets/logo.png';
+import { t } from '../lib/i18n.jsx';
+import LanguageToggle from '../components/LanguageToggle.jsx';
 import InstallApp from '../components/InstallApp.jsx';
 
 export default function Login() {
@@ -33,27 +35,28 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
+        <div className="absolute right-4 top-4"><LanguageToggle /></div>
         <div className="mb-8 flex flex-col items-center text-center">
           <img src={logo} alt="Klinik Utama Baruga Medical Center logo" className="mb-4 h-16 w-16 object-contain" />
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Klinik Utama</p>
           <h1 className="text-xl font-semibold text-slate-900">Baruga Medical Center</h1>
-          <p className="mt-1 text-sm text-slate-500">Sign in to the Patient Tracker</p>
+          <p className="mt-1 text-sm text-slate-500">{t('Sign in to the Patient Tracker')}</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Username">
+          <Field label={t('Username')}>
             <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required autoFocus />
           </Field>
-          <Field label="Password">
+          <Field label={t('Password')}>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
           </Field>
           {shownError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{shownError}</p>}
           <Button type="submit" className="w-full" disabled={busy || !ready}>
             {(busy || !ready) && <Loader2 size={16} className="animate-spin" />}
-            Sign in
+            {t('Sign in')}
           </Button>
-          <p className="text-center text-xs text-slate-500">Forgot your password? Ask a clinic admin to reset it.</p>
-          <InstallApp className="mx-auto flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">Install as an app on this phone</InstallApp>
+          <p className="text-center text-xs text-slate-500">{t('Forgot your password? Ask a clinic admin to reset it.')}</p>
+          <InstallApp className="mx-auto flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">{t('Install as an app on this phone')}</InstallApp>
         </form>
       </div>
     </div>

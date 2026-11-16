@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { STATUS } from '../lib/constants.js';
+import { t } from '../lib/i18n-core.js';
 
 const cx = (...c) => c.filter(Boolean).join(' ');
 
@@ -84,7 +85,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('Close')}>
             <X size={18} />
           </Button>
         </div>
@@ -117,13 +118,13 @@ export function ConfirmProvider({ children }) {
       <Modal
         open={!!state}
         onClose={() => close(false)}
-        title={state?.title || 'Are you sure?'}
+        title={state?.title || t('Are you sure?')}
         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => close(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={() => close(false)}>{t('Cancel')}</Button>
             <Button variant={state?.danger ? 'danger' : 'primary'} onClick={() => close(true)}>
-              {state?.confirmLabel || 'Confirm'}
+              {state?.confirmLabel || t('Confirm')}
             </Button>
           </>
         }

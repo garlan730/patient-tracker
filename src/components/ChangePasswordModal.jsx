@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth.jsx';
 import { Button, Field, Input, Modal } from './ui.jsx';
+import { t } from '../lib/i18n.jsx';
 
 export default function ChangePasswordModal({ open, onClose }) {
   const { changePassword } = useAuth();
@@ -19,8 +20,8 @@ export default function ChangePasswordModal({ open, onClose }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (form.next.length < 6) return setError('New password must be at least 6 characters.');
-    if (form.next !== form.confirm) return setError('The new passwords don’t match.');
+    if (form.next.length < 6) return setError(t('New password must be at least 6 characters.'));
+    if (form.next !== form.confirm) return setError(t('The new passwords don’t match.'));
     setBusy(true);
     setError('');
     try {
@@ -37,29 +38,29 @@ export default function ChangePasswordModal({ open, onClose }) {
     <Modal
       open={open}
       onClose={close}
-      title="Change password"
+      title={t('Change password')}
       footer={
         done ? (
-          <Button onClick={close}>Done</Button>
+          <Button onClick={close}>{t('Done')}</Button>
         ) : (
           <>
-            <Button variant="secondary" onClick={close}>Cancel</Button>
-            <Button type="submit" form="password-form" disabled={busy}>Change password</Button>
+            <Button variant="secondary" onClick={close}>{t('Cancel')}</Button>
+            <Button type="submit" form="password-form" disabled={busy}>{t('Change password')}</Button>
           </>
         )
       }
     >
       {done ? (
-        <p className="text-sm text-slate-600">Your password has been changed.</p>
+        <p className="text-sm text-slate-600">{t('Your password has been changed.')}</p>
       ) : (
         <form id="password-form" onSubmit={submit} className="space-y-4">
-          <Field label="Current password">
+          <Field label={t('Current password')}>
             <Input type="password" value={form.current} onChange={set('current')} autoComplete="current-password" required autoFocus />
           </Field>
-          <Field label="New password" hint="At least 6 characters.">
+          <Field label={t('New password')} hint={t('At least 6 characters.')}>
             <Input type="password" value={form.next} onChange={set('next')} autoComplete="new-password" required />
           </Field>
-          <Field label="Confirm new password">
+          <Field label={t('Confirm new password')}>
             <Input type="password" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" required />
           </Field>
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

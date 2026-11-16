@@ -5,6 +5,8 @@ import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { ROLES } from '../lib/constants.js';
 import { cx } from './ui.jsx';
+import { t } from '../lib/i18n.jsx';
+import LanguageToggle from './LanguageToggle.jsx';
 import logo from '../assets/logo.png';
 import ChangePasswordModal from './ChangePasswordModal.jsx';
 import InstallApp from './InstallApp.jsx';
@@ -32,7 +34,7 @@ export default function Layout() {
         <div className="leading-tight">
           <p className="text-[11px] uppercase tracking-wide text-brand-200">Klinik Utama</p>
           <p className="text-sm font-semibold text-white">Baruga Medical Center</p>
-          <p className="text-xs text-brand-200">Patient Tracker</p>
+          <p className="text-xs text-brand-200">{t('Patient Tracker')}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-2">
@@ -50,11 +52,16 @@ export default function Layout() {
             }
           >
             <Icon size={18} />
-            {label}
+            {t(label)}
           </NavLink>
         ))}
       </nav>
-      <div className="px-3 pb-3">
+      <div className="space-y-2 px-3 pb-3">
+        {/* Language switch */}
+        <div className="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs text-brand-200">
+          <span>{t('Language')}</span>
+          <LanguageToggle dark />
+        </div>
         <InstallApp className="flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/15" />
       </div>
       <div className="border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -69,16 +76,16 @@ export default function Layout() {
           <button
             onClick={() => { setOpen(false); setChangingPassword(true); }}
             className="rounded-lg p-2 text-brand-100/80 hover:bg-white/10 hover:text-white"
-            title="Change password"
-            aria-label="Change password"
+            title={t('Change password')}
+            aria-label={t('Change password')}
           >
             <KeyRound size={18} />
           </button>
           <button
             onClick={logout}
             className="rounded-lg p-2 text-brand-100/80 hover:bg-white/10 hover:text-white"
-            title="Sign out"
-            aria-label="Sign out"
+            title={t('Sign out')}
+            aria-label={t('Sign out')}
           >
             <LogOut size={18} />
           </button>
@@ -100,7 +107,7 @@ export default function Layout() {
 
       <div className="lg:pl-60">
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:hidden">
-          <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Open menu">
+          <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label={t('Open menu')}>
             <Menu size={20} />
           </button>
           <img src={logo} alt="" className="h-6 w-6 object-contain" />
@@ -111,12 +118,12 @@ export default function Layout() {
             <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
               <span className="flex-1">{error}</span>
-              <button onClick={clearError} aria-label="Dismiss" className="text-red-400 hover:text-red-700"><X size={16} /></button>
+              <button onClick={clearError} aria-label={t('Dismiss')} className="text-red-400 hover:text-red-700"><X size={16} /></button>
             </div>
           )}
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-24 text-sm text-slate-400">
-              <Loader2 size={18} className="animate-spin" /> Loading patients…
+              <Loader2 size={18} className="animate-spin" /> {t('Loading patients…')}
             </div>
           ) : (
             <Outlet />

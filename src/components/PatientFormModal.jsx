@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PROGRAMS, programOf } from '../lib/constants.js';
 import { useData } from '../lib/data.jsx';
+import { t } from '../lib/i18n.jsx';
 import { Button, Field, Input, Modal, Select } from './ui.jsx';
 
 // Add (patient = null) or edit an existing patient's details.
@@ -32,47 +33,47 @@ export default function PatientFormModal({ open, patient, program = 'tanam', onC
     <Modal
       open={open}
       onClose={onClose}
-      title={patient ? 'Edit patient' : 'Add new patient'}
+      title={patient ? t('Edit patient') : t('Add new patient')}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" form="patient-form">{patient ? 'Save changes' : 'Add patient'}</Button>
+          <Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button>
+          <Button type="submit" form="patient-form">{patient ? t('Save changes') : t('Add patient')}</Button>
         </>
       }
     >
       <form id="patient-form" onSubmit={handleSubmit} className="space-y-4">
         {!patient && (
-          <Field label="Patient type">
+          <Field label={t('Patient type')}>
             <Select value={form.program} onChange={set('program')}>
               {Object.entries(PROGRAMS).map(([k, p]) => <option key={k} value={k}>{p.label}</option>)}
             </Select>
           </Field>
         )}
-        <Field label="Patient name">
-          <Input value={form.name} onChange={set('name')} placeholder="e.g. Sinta Rahayu" required autoFocus />
+        <Field label={t('Patient name')}>
+          <Input value={form.name} onChange={set('name')} placeholder={t('e.g. Sinta Rahayu')} required autoFocus />
         </Field>
-        <Field label="Phone" hint="Optional">
+        <Field label={t('Phone')} hint={t('Optional')}>
           <Input type="tel" value={form.phone} onChange={set('phone')} placeholder="0812-…" />
         </Field>
-        <Field label="Assigned doctor">
+        <Field label={t('Assigned doctor')}>
           <Select value={form.doctorId} onChange={set('doctorId')} required>
-            <option value="">Select a doctor…</option>
+            <option value="">{t('Select a doctor…')}</option>
             {doctors.map((d) => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </Select>
         </Field>
-        <Field label="Treatment ends at" hint="Pick an earlier step if this patient doesn't need the full treatment.">
+        <Field label={t('Treatment ends at')} hint={t("Pick an earlier step if this patient doesn't need the full treatment.")}>
           <Select value={form.endStep} onChange={set('endStep')}>
             {PROGRAMS[form.program].steps.map((s, i, all) => (
               <option key={s.id} value={i === all.length - 1 ? '' : s.id}>
-                {s.label}{i === all.length - 1 ? ' (full treatment)' : ''}
+                {s.label}{i === all.length - 1 ? ` (${t('full treatment')})` : ''}
               </option>
             ))}
           </Select>
         </Field>
         {!patient && (
-          <Field label={`${PROGRAMS[form.program].steps[0].label} date`} hint="Optional — you can set it later from the tracker.">
+          <Field label={t('{step} date', { step: PROGRAMS[form.program].steps[0].label })} hint={t('Optional — you can set it later from the tracker.')}>
             <Input type="date" value={form.firstDate} onChange={set('firstDate')} />
           </Field>
         )}

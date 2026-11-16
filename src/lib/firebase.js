@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { t } from './i18n-core.js';
 
 // The web config is public by design (it ships in the website).
 // Access to data is controlled by Firebase Auth and the rules in firestore.rules.
@@ -34,7 +35,7 @@ export function friendlyError(err) {
     'permission-denied': 'You do not have permission to do that.',
     unavailable: 'Cannot reach the server. Check your internet connection.',
   };
-  return messages[code] || err?.message || 'Something went wrong.';
+  return t(messages[code] || err?.message || 'Something went wrong.');
 }
 
 // Firebase sign-in needs an email address, so usernames are mapped to an internal address on the

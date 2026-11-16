@@ -9,6 +9,8 @@ import { daysSince, fmtDate, fmtDateTime, toDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { useInventory } from '../lib/inventory.jsx';
+import { t } from '../lib/i18n.jsx';
+import { fmt } from '../lib/dates.js';
 import { Card, PageHeader, cx } from '../components/ui.jsx';
 
 const BAR = '#507801'; // brand-700, the logo green
@@ -45,7 +47,7 @@ export default function Dashboard() {
       .sort((a, b) => b.count - a.count);
 
     const months = Array.from({ length: 12 }, (_, i) => startOfMonth(subMonths(new Date(), 11 - i)));
-    const monthly = months.map((m) => ({ key: format(m, 'yyyy-MM'), label: format(m, 'MMM yy'), count: 0 }));
+    const monthly = months.map((m) => ({ key: format(m, 'yyyy-MM'), label: fmt(m, 'MMM yy'), count: 0 }));
     const activity = [];
     for (const p of inProgram) {
       for (const s of stepsFor(p)) {
@@ -76,8 +78,8 @@ export default function Dashboard() {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${user.name.split(' ')[0]}`}
-        description={`${PROGRAMS[program].label} · overview as of ${format(new Date(), 'EEEE, dd MMMM yyyy')}`}
+        title={t('Welcome back, {name}', { name: user.name.split(' ')[0] })}
+        description={`${PROGRAMS[program].label} · ${t('overview as of {date}', { date: fmt(new Date(), 'EEEE, dd MMMM yyyy') })}`}
         actions={
           <div className="inline-flex rounded-lg bg-slate-200/70 p-1" role="tablist">
             {Object.entries(PROGRAMS).map(([key, prog]) => (
@@ -105,7 +107,7 @@ export default function Dashboard() {
         >
           <AlertTriangle size={16} className="shrink-0" />
           <span className="flex-1">
-            <b>{lowStock.length} material{lowStock.length === 1 ? ' is' : 's are'} low on stock:</b>{' '}
+            <b>{t(lowStock.length === 1 ? '{n} material is low on stock:' : '{n} materials are low on stock:', { n: lowStock.length })}</b>{' '}
             {lowStock.slice(0, 3).map((i) => i.name).join(', ')}{lowStock.length > 3 ? '…' : ''}
           </span>
           <ArrowRight size={14} />
@@ -152,7 +154,7 @@ export default function Dashboard() {
             ].map((s) => (
               <Link key={s.label} to={trackerUrl(`status=${s.to}`)} className="block rounded-lg p-1 hover:bg-slate-50">
                 <div className="mb-1.5 flex justify-between text-sm">
-                  <span className="text-slate-600">{s.label}</span>
+                  <span className="text-slate-600">{t(s.label)}</span>
                   <span className="font-semibold tabular-nums text-slate-900">
                     {s.value} <span className="font-normal text-slate-400">({stats.total ? Math.round((s.value / stats.total) * 100) : 0}%)</span>
                   </span>
@@ -198,14 +200,14 @@ export default function Dashboard() {
           </ul>
           {stats.byDoctor.some((d) => d.count === 0) && (
             <p className="mt-3 text-xs text-slate-400">
-              {stats.byDoctor.filter((d) => d.count === 0).length} other doctor(s) have no active patients.
+              {t('{n} other doctor(s) have no active patients.', { n: stats.byDoctor.filter((d) => d.count === 0).length })}
             </p>
           )}
         </ChartCard>
 
         <ChartCard title="Recent activity" className="xl:col-span-3">
           {stats.recent.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-400">No activity yet.</p>
+            <p className="py-6 text-center text-sm text-slate-400">{t('No activity yet.')}</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {stats.recent.map((a, i) => (
@@ -216,7 +218,7 @@ export default function Dashboard() {
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="text-slate-700">
                       <span className="font-medium text-slate-900">{a.p.name}</span>
-                      {a.type === 'step' ? <> · {a.text}</> : <> · note by {a.author}</>}
+                      {a.type === 'step' ? <> · {a.text}</> : <> · {t('note by {name}', { name: a.author })}</>}
                       <span className="text-slate-400"> · {doctorName(a.p.doctorId)}</span>
                     </p>
                     {(a.type === 'note' ? a.text : a.note) && (
@@ -234,7 +236,7 @@ export default function Dashboard() {
             </ul>
           )}
           <Link to={trackerUrl()} className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
-            Open tracker <ArrowRight size={14} />
+            {t('Open tracker')} <ArrowRight size={14} />
           </Link>
         </ChartCard>
       </div>
@@ -246,7 +248,7 @@ function Kpi({ icon: Icon, label, value, to, className = '' }) {
   const body = (
     <Card className={`h-full p-4 ${to ? 'transition hover:border-brand-200 hover:shadow' : ''}`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{label}</p>
+        <p className="text-sm text-slate-500">{t(label)}</p>
         <Icon size={18} className="text-slate-400" />
       </div>
       <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{value}</p>
@@ -258,8 +260,8 @@ function Kpi({ icon: Icon, label, value, to, className = '' }) {
 function ChartCard({ title, subtitle, className = '', children }) {
   return (
     <Card className={`min-w-0 p-4 sm:p-5 ${className}`}>
-      <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-      {subtitle && <p className="mb-3 text-xs text-slate-500">{subtitle}</p>}
+      <h2 className="text-sm font-semibold text-slate-900">{t(title)}</h2>
+      {subtitle && <p className="mb-3 text-xs text-slate-500">{t(subtitle)}</p>}
       <div className={subtitle ? '' : 'mt-3'}>{children}</div>
     </Card>
   );
@@ -271,7 +273,7 @@ function ChartTip({ active, payload, unit }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
       <p className="font-medium text-slate-900">{label}</p>
-      <p className="text-slate-500">{count} {unit}{count === 1 ? '' : 's'}</p>
+      <p className="text-slate-500">{t(count === 1 ? `{n} ${unit}` : `{n} ${unit}s`, { n: count })}</p>
     </div>
   );
 }

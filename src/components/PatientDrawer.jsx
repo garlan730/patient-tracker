@@ -5,6 +5,7 @@ import { getProgress } from '../lib/patients.js';
 import { fmtDate, fmtDateTime } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
+import { t } from '../lib/i18n.jsx';
 import { Button, ProgressBar, StatusBadge, Textarea, cx, useConfirm } from './ui.jsx';
 
 // Side panel with a patient's step timeline and the timestamped note log.
@@ -34,7 +35,7 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
   };
 
   const removeNote = async (n) => {
-    if (await confirm({ title: 'Delete note?', message: 'This note will be permanently removed.', confirmLabel: 'Delete', danger: true })) {
+    if (await confirm({ title: t('Delete note?'), message: t('This note will be permanently removed.'), confirmLabel: t('Delete'), danger: true })) {
       deleteNote(patient.id, n.id);
     }
   };
@@ -57,15 +58,15 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
             </div>
           </div>
           <div className="flex shrink-0 gap-1">
-            <Button variant="ghost" size="icon" onClick={() => onEditPatient(patient)} aria-label="Edit patient"><Pencil size={16} /></Button>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close"><X size={18} /></Button>
+            <Button variant="ghost" size="icon" onClick={() => onEditPatient(patient)} aria-label={t('Edit patient')}><Pencil size={16} /></Button>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('Close')}><X size={18} /></Button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           <section className="px-5 py-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Treatment timeline{pr.endsEarly && <span className="ml-1 font-normal normal-case tracking-normal">· ends at {pr.finalStep.label}</span>}
+              {t('Treatment timeline')}{pr.endsEarly && <span className="ml-1 font-normal normal-case tracking-normal">· {t('ends at {step}', { step: pr.finalStep.label })}</span>}
             </h3>
             <ol className="space-y-1">
               {stepsFor(patient).map((s) => {
@@ -86,7 +87,7 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
                         <div className="flex items-baseline justify-between gap-2">
                           <span className={cx('text-sm', st?.date ? 'font-medium text-slate-800' : skipped ? 'text-slate-300 line-through' : 'text-slate-500')}>{s.label}</span>
                           <span className="text-xs tabular-nums text-slate-500">
-                            {st?.date ? fmtDate(st.date) : skipped ? 'Not needed' : pr.nextStep?.id === s.id ? 'Next' : ''}
+                            {st?.date ? fmtDate(st.date) : skipped ? t('Not needed') : pr.nextStep?.id === s.id ? t('Next') : ''}
                           </span>
                         </div>
                         {st?.note && <p className="mt-0.5 text-xs text-slate-500 whitespace-pre-line">{st.note}</p>}
@@ -99,15 +100,15 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
           </section>
 
           <section className="border-t border-slate-200 px-5 py-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Notes</h3>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('Notes')}</h3>
             <form onSubmit={submitNote} className="mb-4">
-              <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a note about this patient…" />
+              <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={t('Write a note about this patient…')} />
               <div className="mt-2 flex justify-end">
-                <Button type="submit" size="sm" disabled={!text.trim()}>Add note</Button>
+                <Button type="submit" size="sm" disabled={!text.trim()}>{t('Add note')}</Button>
               </div>
             </form>
             {(patient.notes || []).length === 0 ? (
-              <p className="flex items-center gap-2 text-sm text-slate-400"><MessageSquare size={14} />No notes yet.</p>
+              <p className="flex items-center gap-2 text-sm text-slate-400"><MessageSquare size={14} />{t('No notes yet.')}</p>
             ) : (
               <ul className="space-y-3">
                 {patient.notes.map((n) => (
@@ -117,7 +118,7 @@ export default function PatientDrawer({ patientId, onClose, onEditStep, onEditPa
                         {n.authorName} <span className="font-normal text-slate-400">· {fmtDateTime(n.createdAt)}</span>
                       </p>
                       {(isAdmin || n.authorId === user.id) && (
-                        <button onClick={() => removeNote(n)} className="text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-600" aria-label="Delete note">
+                        <button onClick={() => removeNote(n)} className="text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-600" aria-label={t('Delete note')}>
                           <Trash2 size={14} />
                         </button>
                       )}

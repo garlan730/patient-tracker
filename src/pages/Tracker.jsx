@@ -5,6 +5,7 @@ import { PROGRAMS, STATUS, WAITING_DAYS, programOf } from '../lib/constants.js';
 import { getProgress } from '../lib/patients.js';
 import { fmtDate, toDate } from '../lib/dates.js';
 import { exportPatientsCsv } from '../lib/csv.js';
+import { t } from '../lib/i18n.jsx';
 import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { Button, Card, EmptyState, Input, PageHeader, ProgressBar, Select, StatusBadge, cx, useConfirm } from '../components/ui.jsx';
@@ -95,17 +96,17 @@ export default function Tracker() {
   const sortBy = (key) => setParam('sort', sort === key ? '' : key);
   const recordNext = (p, pr) => pr.nextStep && setStepTarget({ patient: p, stepId: pr.nextStep.id });
   const menuItems = (p) => [
-    { label: 'Edit patient', icon: <Pencil size={14} />, onClick: () => setForm({ open: true, patient: p }) },
-    { label: p.archived ? 'Restore' : 'Archive', icon: p.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />, onClick: () => toggleArchive(p) },
-    isAdmin && { label: 'Delete', icon: <Trash2 size={14} />, danger: true, onClick: () => handleDelete(p) },
+    { label: t('Edit patient'), icon: <Pencil size={14} />, onClick: () => setForm({ open: true, patient: p }) },
+    { label: p.archived ? t('Restore') : t('Archive'), icon: p.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />, onClick: () => toggleArchive(p) },
+    isAdmin && { label: t('Delete'), icon: <Trash2 size={14} />, danger: true, onClick: () => handleDelete(p) },
   ];
 
   const toggleArchive = (p) => updatePatient(p.id, { archived: !p.archived });
   const handleDelete = async (p) => {
     const ok = await confirm({
-      title: 'Delete patient?',
-      message: `${p.name} and all of their treatment dates and notes will be permanently deleted. Consider archiving instead.`,
-      confirmLabel: 'Delete',
+      title: t('Delete patient?'),
+      message: t('{name} and all of their treatment dates and notes will be permanently deleted. Consider archiving instead.', { name: p.name }),
+      confirmLabel: t('Delete'),
       danger: true,
     });
     if (ok) deletePatient(p.id);
@@ -114,15 +115,15 @@ export default function Tracker() {
   return (
     <>
       <PageHeader
-        title="Patient Tracker"
-        description={`${PROGRAMS[program].label} · ${rows.length} ${f.archived ? 'archived' : 'active'} patient${rows.length === 1 ? '' : 's'}${activeFilterCount ? ' matching filters' : ''}`}
+        title={t('Patient Tracker')}
+        description={`${PROGRAMS[program].label} · ${t(f.archived ? (rows.length === 1 ? '{n} archived patient' : '{n} archived patients') : (rows.length === 1 ? '{n} active patient' : '{n} active patients'), { n: rows.length })}${activeFilterCount ? ` ${t('matching filters')}` : ''}`}
         actions={
           <>
             <Button variant="secondary" onClick={() => exportPatientsCsv(rows.map((r) => r.p), doctorName, program)} disabled={!rows.length}>
-              <Download size={16} /> Export CSV
+              <Download size={16} /> {t('Export CSV')}
             </Button>
             <Button onClick={() => setForm({ open: true, patient: null, program })}>
-              <Plus size={16} /> Add patient
+              <Plus size={16} /> {t('Add patient')}
             </Button>
           </>
         }
@@ -152,23 +153,23 @@ export default function Tracker() {
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="relative flex-1">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input className="pl-9" placeholder="Search by patient, phone or doctor…" value={f.q} onChange={(e) => setParam('q', e.target.value)} />
+            <Input className="pl-9" placeholder={t('Search by patient, phone or doctor…')} value={f.q} onChange={(e) => setParam('q', e.target.value)} />
           </div>
           <div className="flex gap-2">
-            <Select className="md:w-56" value={sort} onChange={(e) => setParam('sort', e.target.value === 'recent' ? '' : e.target.value)} aria-label="Sort by">
-              {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
+            <Select className="md:w-64" value={sort} onChange={(e) => setParam('sort', e.target.value === 'recent' ? '' : e.target.value)} aria-label={t('Sort by')}>
+              {Object.entries(SORTS).map(([k, s]) => <option key={k} value={k}>{t(s.label)}</option>)}
             </Select>
             <Button
               variant={showDates ? 'primary' : 'secondary'}
               className="hidden md:inline-flex"
               onClick={() => setParam('view', showDates ? '' : 'dates')}
               aria-pressed={showDates}
-              title="Show every step's date in its own column"
+              title={t("Show every step's date in its own column")}
             >
-              <CalendarDays size={16} /> {showDates ? 'Hide dates' : 'Show dates'}
+              <CalendarDays size={16} /> {showDates ? t('Hide dates') : t('Show dates')}
             </Button>
             <Button variant={showFilters ? 'primary' : 'secondary'} onClick={() => setShowFilters((s) => !s)}>
-              <SlidersHorizontal size={16} /> Filters
+              <SlidersHorizontal size={16} /> {t('Filters')}
               {activeFilterCount > 0 && (
                 <span className={cx('rounded-full px-1.5 text-xs', showFilters ? 'bg-white/20' : 'bg-brand-100 text-brand-800')}>{activeFilterCount}</span>
               )}
@@ -180,33 +181,33 @@ export default function Tracker() {
           <div className="mt-3 grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-2 lg:grid-cols-4">
             <FilterField label="Doctor">
               <Select value={f.doctor} onChange={(e) => setParam('doctor', e.target.value)}>
-                <option value="">All doctors</option>
-                <option value="none">Unassigned</option>
+                <option value="">{t('All doctors')}</option>
+                <option value="none">{t('Unassigned')}</option>
                 {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             </FilterField>
             <FilterField label="Status">
               <Select value={f.status} onChange={(e) => setParam('status', e.target.value)}>
-                <option value="">Any status</option>
+                <option value="">{t('Any status')}</option>
                 {Object.entries(STATUS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
               </Select>
             </FilterField>
             <FilterField label="Next step">
               <Select value={f.stage} onChange={(e) => setParam('stage', e.target.value)}>
-                <option value="">Any step</option>
+                <option value="">{t('Any step')}</option>
                 {TREATMENT_STEPS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </Select>
             </FilterField>
             <FilterField label="Waiting">
               <Select value={f.waiting} onChange={(e) => setParam('waiting', e.target.value)}>
-                <option value="">Any time</option>
-                <option value={WAITING_DAYS.warn}>{WAITING_DAYS.warn}+ days since last step</option>
-                <option value={WAITING_DAYS.alert}>{WAITING_DAYS.alert}+ days since last step</option>
+                <option value="">{t('Any time')}</option>
+                <option value={WAITING_DAYS.warn}>{t('{n}+ days since last step', { n: WAITING_DAYS.warn })}</option>
+                <option value={WAITING_DAYS.alert}>{t('{n}+ days since last step', { n: WAITING_DAYS.alert })}</option>
               </Select>
             </FilterField>
             <FilterField label="Date of">
               <Select value={f.dateField} onChange={(e) => setParam('dateField', e.target.value)}>
-                <option value="">Last activity</option>
+                <option value="">{t('Last activity')}</option>
                 {TREATMENT_STEPS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </Select>
             </FilterField>
@@ -218,13 +219,13 @@ export default function Tracker() {
             </FilterField>
             <FilterField label="Show">
               <Select value={f.archived} onChange={(e) => setParam('archived', e.target.value)}>
-                <option value="">Active patients</option>
-                <option value="1">Archived patients</option>
+                <option value="">{t('Active patients')}</option>
+                <option value="1">{t('Archived patients')}</option>
               </Select>
             </FilterField>
             {activeFilterCount > 0 && (
               <div className="flex items-end">
-                <Button variant="ghost" size="sm" onClick={clearFilters}><X size={14} /> Clear all filters</Button>
+                <Button variant="ghost" size="sm" onClick={clearFilters}><X size={14} /> {t('Clear all filters')}</Button>
               </div>
             )}
           </div>
@@ -234,8 +235,8 @@ export default function Tracker() {
       {/* Phones: one card per patient (wide tables don't fit). */}
       <div className="space-y-3 md:hidden">
         {rows.length === 0 ? (
-          <Card>{<EmptyState icon={Users} title="No patients found">
-                {activeFilterCount || f.q ? 'Try adjusting your search or filters.' : 'Add your first patient to get started.'}
+          <Card>{<EmptyState icon={Users} title={t('No patients found')}>
+                {activeFilterCount || f.q ? t('Try adjusting your search or filters.') : t('Add your first patient to get started.')}
               </EmptyState>}</Card>
         ) : (
           rows.map(({ p, pr, wait }) => (
@@ -244,7 +245,7 @@ export default function Tracker() {
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900">{p.name}</p>
                   <p className="text-xs text-slate-500">
-                    {p.doctorId ? shortDoctor(doctorName(p.doctorId)) : 'No doctor assigned'}
+                    {p.doctorId ? shortDoctor(doctorName(p.doctorId)) : t('No doctor assigned')}
                     {p.notes?.length > 0 && <span className="ml-2 inline-flex items-center gap-0.5"><MessageSquare size={11} />{p.notes.length}</span>}
                   </p>
                 </div>
@@ -257,7 +258,7 @@ export default function Tracker() {
               </div>
               {pr.nextStep && (
                 <Button className="mt-3 w-full" variant="secondary" onClick={(e) => { e.stopPropagation(); recordNext(p, pr); }}>
-                  <CalendarPlus size={16} /> Record {pr.nextStep.label}
+                  <CalendarPlus size={16} /> {t('Record {step}', { step: pr.nextStep.label })}
                 </Button>
               )}
             </Card>
@@ -271,21 +272,21 @@ export default function Tracker() {
           <table className="min-w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <Th className="sticky left-0 z-30 min-w-[200px] bg-slate-50"><SortHead label="Patient" active={sort === 'name'} onClick={() => sortBy('name')} /></Th>
-                <Th className="min-w-[150px]">Doctor</Th>
-                <Th className={showDates ? 'min-w-[150px]' : 'min-w-[280px] w-full'}><SortHead label="Progress" active={sort === 'progress'} onClick={() => sortBy('progress')} /></Th>
-                <Th className="min-w-[96px]"><SortHead label="Waiting" active={sort === 'waiting'} onClick={() => sortBy('waiting')} /></Th>
+                <Th className="sticky left-0 z-30 min-w-[200px] bg-slate-50"><SortHead label={t('Patient')} active={sort === 'name'} onClick={() => sortBy('name')} /></Th>
+                <Th className="min-w-[150px]">{t('Doctor')}</Th>
+                <Th className={showDates ? 'min-w-[150px]' : 'min-w-[280px] w-full'}><SortHead label={t('Progress')} active={sort === 'progress'} onClick={() => sortBy('progress')} /></Th>
+                <Th className="min-w-[96px]"><SortHead label={t('Waiting')} active={sort === 'waiting'} onClick={() => sortBy('waiting')} /></Th>
                 {showDates
                   ? TREATMENT_STEPS.map((s) => <Th key={s.id} className="min-w-[112px] text-center">{s.label}</Th>)
-                  : <Th className="hidden min-w-[190px] xl:table-cell"><span className="sr-only">Next step</span></Th>}
+                  : <Th className="hidden min-w-[190px] xl:table-cell"><span className="sr-only">{t('Next step')}</span></Th>}
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={showDates ? TREATMENT_STEPS.length + 4 : 5}>
-                    <EmptyState icon={Users} title="No patients found">
-                {activeFilterCount || f.q ? 'Try adjusting your search or filters.' : 'Add your first patient to get started.'}
+                    <EmptyState icon={Users} title={t('No patients found')}>
+                {activeFilterCount || f.q ? t('Try adjusting your search or filters.') : t('Add your first patient to get started.')}
               </EmptyState>
                   </td>
                 </tr>
@@ -299,7 +300,7 @@ export default function Tracker() {
                           <span className="flex items-center gap-2 text-xs text-slate-500">
                             {p.phone || '—'}
                             {p.notes?.length > 0 && (
-                              <span className="inline-flex items-center gap-0.5 text-slate-400" title={`${p.notes.length} note(s)`}>
+                              <span className="inline-flex items-center gap-0.5 text-slate-400" title={t('{n} note(s)', { n: p.notes.length })}>
                                 <MessageSquare size={11} />{p.notes.length}
                               </span>
                             )}
@@ -309,7 +310,7 @@ export default function Tracker() {
                       </div>
                     </Td>
                     <Td className="text-slate-600" title={doctorName(p.doctorId)}>
-                      <span className="line-clamp-2">{p.doctorId ? shortDoctor(doctorName(p.doctorId)) : <span className="text-slate-400">Unassigned</span>}</span>
+                      <span className="line-clamp-2">{p.doctorId ? shortDoctor(doctorName(p.doctorId)) : <span className="text-slate-400">{t('Unassigned')}</span>}</span>
                     </Td>
                     <Td>
                       {showDates ? (
@@ -328,7 +329,7 @@ export default function Tracker() {
                               onClick={(e) => { e.stopPropagation(); recordNext(p, pr); }}
                               className="mt-1.5 inline-flex items-center gap-1 rounded-md text-xs font-medium text-brand-700 hover:underline xl:hidden"
                             >
-                              <CalendarPlus size={13} /> Record {pr.nextStep.label}
+                              <CalendarPlus size={13} /> {t('Record {step}', { step: pr.nextStep.label })}
                             </button>
                           )}
                         </>
@@ -344,7 +345,7 @@ export default function Tracker() {
                           <Td key={s.id} className="p-1 text-center">
                             <button
                               onClick={(e) => { e.stopPropagation(); setStepTarget({ patient: p, stepId: s.id }); }}
-                              title={skipped ? `Not needed — treatment ends at ${pr.finalStep.label}` : st?.note ? `Note: ${st.note}` : st?.date ? 'Edit date / note' : 'Set date'}
+                              title={skipped ? t('Not needed — treatment ends at {step}', { step: pr.finalStep.label }) : st?.note ? `${t('Note')}: ${st.note}` : st?.date ? t('Edit date / note') : t('Set date')}
                               className={cx(
                                 'relative w-full rounded-md px-2 py-1.5 text-xs tabular-nums transition-colors',
                                 st?.date
@@ -356,7 +357,7 @@ export default function Tracker() {
                                       : 'text-slate-300 hover:bg-slate-100 hover:text-slate-500'
                               )}
                             >
-                              {st?.date ? fmtDate(st.date) : skipped ? 'n/a' : isNext ? 'Next' : '+'}
+                              {st?.date ? fmtDate(st.date) : skipped ? t('n/a') : isNext ? t('Next') : '+'}
                               {st?.note && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-500" />}
                             </button>
                           </Td>
@@ -366,10 +367,10 @@ export default function Tracker() {
                       <Td className="hidden text-right xl:table-cell">
                         {pr.nextStep ? (
                           <Button size="sm" variant="secondary" className="whitespace-nowrap" onClick={(e) => { e.stopPropagation(); recordNext(p, pr); }}>
-                            <CalendarPlus size={14} /> Record {pr.nextStep.label}
+                            <CalendarPlus size={14} /> {t('Record {step}', { step: pr.nextStep.label })}
                           </Button>
                         ) : (
-                          <span className="text-xs font-medium text-brand-700">Done</span>
+                          <span className="text-xs font-medium text-brand-700">{t('Done')}</span>
                         )}
                       </Td>
                     )}
@@ -381,12 +382,12 @@ export default function Tracker() {
         </div>
       </Card>
       <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-        <span>Tap a patient to see their timeline and notes. Tap a step in the bar to set its date or add a note.</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-brand-600" /> done</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-amber-100 ring-2 ring-inset ring-amber-400" /> next</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full border border-dashed border-slate-300" /> not needed</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> has note</span>
-        <span>Waiting turns amber after {WAITING_DAYS.warn} days and red after {WAITING_DAYS.alert}.</span>
+        <span>{t('Tap a patient to see their timeline and notes. Tap a step in the bar to set its date or add a note.')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-brand-600" /> {t('done')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-amber-100 ring-2 ring-inset ring-amber-400" /> {t('next')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full border border-dashed border-slate-300" /> {t('not needed')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> {t('has note')}</span>
+        <span>{t('Waiting turns amber after {warn} days and red after {alert}.', { warn: WAITING_DAYS.warn, alert: WAITING_DAYS.alert })}</span>
       </p>
 
       <StepModal target={stepTarget} onClose={() => setStepTarget(null)} />
@@ -411,7 +412,7 @@ const Td = ({ className, ...props }) => (
 function FilterField({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-slate-500">{t(label)}</span>
       {children}
     </label>
   );

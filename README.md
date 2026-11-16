@@ -52,6 +52,10 @@ Sign-in uses **Firebase Authentication** with a **username + password** and data
 - **Home-screen app** — installable on phones: Android shows an **Install app** button (sidebar and sign-in page);
   iPhone shows Share → Add to Home Screen steps. Opens full screen with the clinic icon. Settings in
   `public/manifest.webmanifest`, icons in `public/icons/`. Needs internet (no offline mode).
+- **Indonesian / English** — Indonesian by default; switch with **ID / EN** in the sidebar or on the sign-in page
+  (remembered per device). Text is written in English in the code and wrapped in `t('…')`; Indonesian lives in
+  `src/lib/i18n-id.js`, keyed by the English text. Missing entries show in English and log a warning in `npm run dev`.
+  Dental terms follow the clinic's own wording (Cetak Crown, Pasang Crown, Kontrol, Healing Abutment).
 - **Export CSV** (opens in Excel) of the current filtered view
 
 ## Data & security
