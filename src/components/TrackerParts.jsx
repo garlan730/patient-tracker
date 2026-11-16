@@ -68,16 +68,22 @@ export function ProgressStrip({ patient, progress, onStep, size = 'sm' }) {
   );
 }
 
-// Text under the strip: what's next and where the patient last was.
+// Text under the strip, in the same order and colours as the bar: done (green) on the left,
+// what's next (amber) on the right.
 export function ProgressSummary({ progress }) {
   const { status, nextStep, lastStep, completed, total } = progress;
-  const last = lastStep ? `Last: ${lastStep.label}` : 'No steps yet';
   return (
     <div className="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
-      <span className={cx('font-medium', status === 'completed' ? 'text-brand-700' : 'text-slate-800')}>
-        {status === 'completed' ? 'Completed' : `Next: ${nextStep?.label}`}
+      <span className={lastStep ? 'text-brand-700' : 'text-slate-400'}>
+        <span className="tabular-nums">{completed} of {total}</span>
+        {' · '}
+        {lastStep ? <>Last: <span className="font-medium">{lastStep.label}</span></> : 'No steps yet'}
       </span>
-      <span className="text-slate-500">{completed} of {total} · {last}</span>
+      {status === 'completed' ? (
+        <span className="font-medium text-brand-700">Completed</span>
+      ) : (
+        <span className="text-amber-700">Next: <span className="font-semibold">{nextStep?.label}</span></span>
+      )}
     </div>
   );
 }
