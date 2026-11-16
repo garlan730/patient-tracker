@@ -49,6 +49,9 @@ Sign-in uses **Firebase Authentication** with a **username + password** and data
   count correction) with full history, and material requests that open WhatsApp with the request filled in.
   Requests are tracked Requested → Ordered → Received; marking Received adds the quantities to stock. Admins set
   up items and the WhatsApp number (bottom of Inventory → Stock).
+- **Home-screen app** — installable on phones: Android shows an **Install app** button (sidebar and sign-in page);
+  iPhone shows Share → Add to Home Screen steps. Opens full screen with the clinic icon. Settings in
+  `public/manifest.webmanifest`, icons in `public/icons/`. Needs internet (no offline mode).
 - **Export CSV** (opens in Excel) of the current filtered view
 
 ## Data & security

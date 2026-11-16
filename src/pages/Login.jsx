@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '../lib/auth.jsx';
 import { Button, Field, Input } from '../components/ui.jsx';
 import logo from '../assets/logo.png';
+import InstallApp from '../components/InstallApp.jsx';
 
 export default function Login() {
   const { user, login, ready, authError } = useAuth();
@@ -52,6 +53,7 @@ export default function Login() {
             Sign in
           </Button>
           <p className="text-center text-xs text-slate-500">Forgot your password? Ask a clinic admin to reset it.</p>
+          <InstallApp className="mx-auto flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">Install as an app on this phone</InstallApp>
         </form>
       </div>
     </div>
