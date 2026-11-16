@@ -25,10 +25,13 @@ export const INTERNAL_STEPS = [
 
 // Each patient belongs to one program; the program decides which steps are tracked.
 export const PROGRAMS = {
-  // Order here is the order of the tabs (Internal first); Tanam stays the default selection.
+  // Order here is the order of the tabs.
   internal: { get label() { return t('Internal Patients'); }, get short() { return t('Internal'); }, steps: INTERNAL_STEPS },
   tanam: { get label() { return t("Tanam's Patients"); }, get short() { return t('Tanam'); }, steps: TREATMENT_STEPS },
 };
+
+// The tab that opens when no program is chosen (in the address, ?program=…).
+export const DEFAULT_PROGRAM = 'internal';
 
 // Patients saved before programs existed have no `program` field and are Tanam patients.
 export const programOf = (patient) => (PROGRAMS[patient?.program] ? patient.program : 'tanam');

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { Users, Clock, CheckCircle2, UserPlus, CalendarCheck, MessageSquare, ArrowRight, AlertTriangle } from 'lucide-react';
-import { PROGRAMS, programOf, stepsFor } from '../lib/constants.js';
+import { DEFAULT_PROGRAM, PROGRAMS, programOf, stepsFor } from '../lib/constants.js';
 import { getProgress } from '../lib/patients.js';
 import { daysSince, fmtDate, fmtDateTime, toDate } from '../lib/dates.js';
 import { useAuth } from '../lib/auth.jsx';
@@ -22,11 +22,11 @@ export default function Dashboard() {
   const { lowStock } = useInventory();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const program = PROGRAMS[params.get('program')] ? params.get('program') : 'tanam';
+  const program = PROGRAMS[params.get('program')] ? params.get('program') : DEFAULT_PROGRAM;
   // Tracker links keep the dashboard's program so the tracker opens on the matching tab.
   const trackerUrl = (query = '') => {
     const q = new URLSearchParams(query);
-    if (program !== 'tanam') q.set('program', program);
+    if (program !== DEFAULT_PROGRAM) q.set('program', program);
     const str = q.toString();
     return `/tracker${str ? `?${str}` : ''}`;
   };
@@ -87,7 +87,7 @@ export default function Dashboard() {
                 key={key}
                 role="tab"
                 aria-selected={program === key}
-                onClick={() => setParams(key === 'tanam' ? {} : { program: key }, { replace: true })}
+                onClick={() => setParams(key === DEFAULT_PROGRAM ? {} : { program: key }, { replace: true })}
                 className={cx(
                   'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                   program === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'

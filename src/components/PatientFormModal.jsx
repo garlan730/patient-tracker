@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { PROGRAMS, programOf } from '../lib/constants.js';
+import { DEFAULT_PROGRAM, PROGRAMS, programOf } from '../lib/constants.js';
 import { useData } from '../lib/data.jsx';
 import { t } from '../lib/i18n.jsx';
 import { Button, Field, Input, Modal, Select } from './ui.jsx';
 
 // Add (patient = null) or edit an existing patient's details.
-export default function PatientFormModal({ open, patient, program = 'tanam', onClose }) {
+export default function PatientFormModal({ open, patient, program = DEFAULT_PROGRAM, onClose }) {
   const { doctors, addPatient, updatePatient } = useData();
   const [form, setForm] = useState({ program, name: '', phone: '', doctorId: '', firstDate: '', endStep: '' });
 

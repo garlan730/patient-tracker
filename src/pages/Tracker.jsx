@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Download, Archive, ArchiveRestore, Trash2, Pencil, MessageSquare, SlidersHorizontal, X, Users, ChevronDown, CalendarPlus, CalendarDays } from 'lucide-react';
-import { PROGRAMS, STATUS, WAITING_DAYS, programOf } from '../lib/constants.js';
+import { DEFAULT_PROGRAM, PROGRAMS, STATUS, WAITING_DAYS, programOf } from '../lib/constants.js';
 import { getProgress } from '../lib/patients.js';
 import { fmtDate, toDate } from '../lib/dates.js';
 import { exportPatientsCsv } from '../lib/csv.js';
@@ -37,7 +37,7 @@ export default function Tracker() {
 
   const f = Object.fromEntries(FILTER_KEYS.map((k) => [k, params.get(k) || '']));
   const sort = params.get('sort') || 'recent';
-  const program = PROGRAMS[params.get('program')] ? params.get('program') : 'tanam';
+  const program = PROGRAMS[params.get('program')] ? params.get('program') : DEFAULT_PROGRAM;
   const TREATMENT_STEPS = PROGRAMS[program].steps;
   const showDates = params.get('view') === 'dates';
   const setParam = (key, value) => {
@@ -49,7 +49,7 @@ export default function Tracker() {
   const clearFilters = () => {
     const keep = {};
     if (sort !== 'recent') keep.sort = sort;
-    if (program !== 'tanam') keep.program = program;
+    if (program !== DEFAULT_PROGRAM) keep.program = program;
     if (showDates) keep.view = 'dates';
     setParams(keep, { replace: true });
   };
@@ -57,7 +57,7 @@ export default function Tracker() {
   const switchProgram = (next) => {
     const nextParams = new URLSearchParams(params);
     ['stage', 'dateField'].forEach((k) => nextParams.delete(k));
-    if (next === 'tanam') nextParams.delete('program');
+    if (next === DEFAULT_PROGRAM) nextParams.delete('program');
     else nextParams.set('program', next);
     setParams(nextParams, { replace: true });
   };
