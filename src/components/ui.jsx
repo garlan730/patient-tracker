@@ -79,7 +79,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       <div
         role="dialog"
         aria-modal="true"
-        className={cx('relative w-full rounded-xl bg-white shadow-xl', size === 'sm' ? 'max-w-sm' : 'max-w-md')}
+        className={cx('relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-xl bg-white shadow-xl', size === 'sm' ? 'max-w-sm' : 'max-w-md')}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">{title}</h3>
@@ -87,7 +87,8 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
             <X size={18} />
           </Button>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        {/* Body scrolls on short screens so the header and buttons stay reachable. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 rounded-b-xl">{footer}</div>}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle, History, Loader2, MessageCircle, Minus, Package, Pencil, Plus, Search, Send, Trash2, Upload, X,
@@ -503,26 +503,29 @@ function RequestModal({ lines, onClose }) {
               const it = items.find((x) => x.id === row.itemId);
               if (!it) return null;
               return (
-                <li key={row.itemId} className="flex items-center gap-2 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{it.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {it.category || 'No category'} · {it.stock} {it.unit} in stock
-                      {isLow(it) && <span className="text-red-600"> · low</span>}
-                    </p>
+                <li key={row.itemId} className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 flex-1 items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-snug text-slate-800">{it.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {it.stock} {it.unit} in stock{isLow(it) && <span className="font-medium text-red-600"> · low</span>}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
+                      aria-label={`Remove ${it.name}`}
+                      className="-mr-1 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-red-600 sm:order-last"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                  <Input
-                    type="number"
-                    min="1"
-                    className="w-20 shrink-0"
+                  <QtyStepper
                     value={row.qty}
-                    onChange={(e) => update(i, { qty: e.target.value })}
-                    aria-label={`Quantity of ${it.name} in ${it.unit}`}
+                    unit={it.unit}
+                    label={`Quantity of ${it.name}`}
+                    onChange={(qty) => update(i, { qty })}
                   />
-                  <span className="w-12 shrink-0 text-xs text-slate-500">{it.unit}</span>
-                  <Button size="icon" variant="ghost" aria-label={`Remove ${it.name}`} onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>
-                    <X size={16} />
-                  </Button>
                 </li>
               );
             })}
@@ -542,12 +545,43 @@ function RequestModal({ lines, onClose }) {
   );
 }
 
+// − [qty] + control: big tap targets so phones rarely need the keyboard.
+function QtyStepper({ value, unit, label, onChange }) {
+  const n = Number(value) || 0;
+  const btn = 'flex h-9 w-9 items-center justify-center text-slate-600 hover:bg-slate-50 disabled:text-slate-300';
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <div className="flex items-center overflow-hidden rounded-lg border border-slate-300 bg-white">
+        <button type="button" className={btn} onClick={() => onChange(String(Math.max(1, n - 1)))} disabled={n <= 1} aria-label="Decrease">
+          <Minus size={14} />
+        </button>
+        <input
+          type="number"
+          inputMode="numeric"
+          min="1"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => { if (!(Number(value) >= 1)) onChange('1'); }}
+          aria-label={label}
+          className="h-9 w-12 border-x border-slate-300 text-center text-sm tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button type="button" className={btn} onClick={() => onChange(String(n + 1))} aria-label="Increase">
+          <Plus size={14} />
+        </button>
+      </div>
+      <span className="w-16 text-xs text-slate-500 sm:w-14">{unit}</span>
+    </div>
+  );
+}
+
 // Search box that lists matching materials as you type; picking one adds it to the request.
 // Every word typed must appear in the name or category, in any order ("putty bahan" finds "Bahan cetak putty").
 function MaterialSearch({ items, exclude, onPick }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const inputRef = useRef(null);
+  const touch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const matches = items
@@ -560,6 +594,11 @@ function MaterialSearch({ items, exclude, onPick }) {
     onPick(it);
     setQ('');
     setActive(0);
+    // On phones, close the keyboard so the added item and quantity are visible.
+    if (touch) {
+      inputRef.current?.blur();
+      setOpen(false);
+    }
   };
 
   const onKeyDown = (e) => {
@@ -585,7 +624,9 @@ function MaterialSearch({ items, exclude, onPick }) {
         role="combobox"
         aria-expanded={open}
         aria-controls="material-results"
-        autoFocus
+        ref={inputRef}
+        autoFocus={!touch}
+        enterKeyHint="done"
       />
       {open && (q || matches.length > 0) && (
         <ul id="material-results" role="listbox" className="absolute z-10 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
