@@ -9,6 +9,7 @@ import Tracker from './pages/Tracker.jsx';
 import Doctors from './pages/Doctors.jsx';
 import UsersPage from './pages/Users.jsx';
 import Inventory from './pages/Inventory.jsx';
+import UpdateBanner from './components/UpdateBanner.jsx';
 
 function RequireAuth({ children, adminOnly }) {
   const { ready, user, isAdmin } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <UpdateBanner />
     </ConfirmProvider>
   );
 }
