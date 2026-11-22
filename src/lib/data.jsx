@@ -92,6 +92,19 @@ export function DataProvider({ children }) {
 
   const updatePatient = useCallback((id, changes) => run(updateDoc(patientRef(id), changes)), [run]);
 
+  // Archive (or restore) many patients at once — Firestore batches hold up to 500 writes.
+  const setArchived = useCallback(async (ids, archived) => {
+    for (let i = 0; i < ids.length; i += 400) {
+      const batch = writeBatch(db);
+      ids.slice(i, i + 400).forEach((id) => batch.update(patientRef(id), { archived }));
+      try {
+        await batch.commit();
+      } catch (err) {
+        throw new Error(friendlyError(err));
+      }
+    }
+  }, []);
+
   const deletePatient = useCallback((id) => run((async () => {
     const batch = writeBatch(db);
     const noteSnap = await getDocs(collection(db, 'patients', id, 'notes'));
@@ -227,6 +240,7 @@ export function DataProvider({ children }) {
     removeDoctor,
     downloadBackup,
     importPatients,
+    setArchived,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

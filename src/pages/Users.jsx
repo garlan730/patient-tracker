@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth.jsx';
 import { useData } from '../lib/data.jsx';
 import { hasRealEmail } from '../lib/firebase.js';
 import { t } from '../lib/i18n.jsx';
+import TanamCleanup from '../components/TanamCleanup.jsx';
 import { Button, Card, Field, Input, Modal, PageHeader, Select, cx, useConfirm } from '../components/ui.jsx';
 
 export default function UsersPage() {
@@ -130,6 +131,7 @@ export default function UsersPage() {
       </Card>
 
       <ImportCard />
+      <TanamCleanup />
 
       <ResetPasswordModal user={resetting} onClose={() => setResetting(null)} onDone={(u) => setNotice(t('Password for {name} has been reset. Share the new password privately.', { name: u.username }))} />
 

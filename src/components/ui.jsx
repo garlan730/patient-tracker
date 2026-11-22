@@ -81,7 +81,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       <div
         role="dialog"
         aria-modal="true"
-        className={cx('relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-xl bg-white shadow-xl', size === 'sm' ? 'max-w-sm' : 'max-w-md')}
+        className={cx('relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-xl bg-white shadow-xl', size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-md')}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">{title}</h3>
