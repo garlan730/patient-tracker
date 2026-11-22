@@ -69,7 +69,7 @@ const InventoryContext = createContext(null);
 const NONE = { items: false, requests: false, settings: false };
 
 export function InventoryProvider({ children }) {
-  const { user } = useAuth();
+  const { user, isViewer } = useAuth();
   const [items, setItems] = useState([]);
   const [requests, setRequests] = useState([]);
   const [settings, setSettings] = useState({});
@@ -82,7 +82,7 @@ export function InventoryProvider({ children }) {
     setRequests([]);
     setSettings({});
     setLoaded(NONE);
-    if (!userId) return;
+    if (!userId || isViewer) return; // the TV account has no inventory access
     const done = (key) => setLoaded((l) => (l[key] ? l : { ...l, [key]: true }));
     const fail = (err) => setError(friendlyError(err));
     const unsubs = [
@@ -100,7 +100,7 @@ export function InventoryProvider({ children }) {
       }, fail),
     ];
     return () => unsubs.forEach((u) => u());
-  }, [userId]);
+  }, [userId, isViewer]);
 
   const wrap = useCallback(async (fn) => {
     try {

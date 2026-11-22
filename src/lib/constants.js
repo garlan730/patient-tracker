@@ -57,6 +57,8 @@ export const STATUS = {
 export const ROLES = {
   admin: { get label() { return t('Admin'); }, get description() { return t('Full access: doctors, users, delete patients'); } },
   staff: { get label() { return t('Staff'); }, get description() { return t('Track progress, add patients and notes'); } },
+  // For the clinic TV: sees only the patient progress board, can't change anything.
+  viewer: { get label() { return t('TV (view only)'); }, get description() { return t('Only shows the patient progress board on the clinic TV'); } },
 };
 
 // Days since a patient's last step before the tracker flags them as waiting (amber) or overdue (red).

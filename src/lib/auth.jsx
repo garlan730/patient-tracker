@@ -64,6 +64,7 @@ export function AuthProvider({ children }) {
   }, [authUser]);
 
   const isAdmin = profile?.role === 'admin';
+  const isViewer = profile?.role === 'viewer';
 
   useEffect(() => {
     if (!isAdmin) {
@@ -173,6 +174,7 @@ export function AuthProvider({ children }) {
     ready: authUser !== undefined && (authUser === null || profile !== undefined),
     user: profile || null,
     isAdmin,
+    isViewer,
     users,
     authError,
     login,

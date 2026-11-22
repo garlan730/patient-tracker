@@ -19,13 +19,17 @@ service cloud.firestore {
     function isAdmin() {
       return isActive() && profile().role == 'admin';
     }
+    // Admins and staff. The 'viewer' role (clinic TV) is active but may only read patients and doctors.
+    function isStaff() {
+      return isActive() && profile().role in ['admin', 'staff'];
+    }
 
     // Staff accounts. Everyone can read their own profile (the app needs it to know their role);
     // only admins can see the list or add/change users. Nobody deletes profiles from the app.
     match /users/{uid} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
       allow create, update: if isAdmin()
-        && request.resource.data.role in ['admin', 'staff']
+        && request.resource.data.role in ['admin', 'staff', 'viewer']
         && request.resource.data.active is bool;
       allow delete: if false;
     }
@@ -38,19 +42,19 @@ service cloud.firestore {
 
     match /patients/{patientId} {
       allow read: if isActive();
-      allow create, update: if isActive()
+      allow create, update: if isStaff()
         && request.resource.data.name is string
         && request.resource.data.program in ['tanam', 'internal'];
       allow delete: if isAdmin();
 
       // Notes can't be edited; only their author or an admin can delete them.
       match /notes/{noteId} {
-        allow read: if isActive();
-        allow create: if isActive()
+        allow read: if isStaff();
+        allow create: if isStaff()
           && request.resource.data.authorId == request.auth.uid
           && request.resource.data.text is string;
         allow update: if false;
-        allow delete: if isAdmin() || (isActive() && resource.data.authorId == request.auth.uid);
+        allow delete: if isAdmin() || (isStaff() && resource.data.authorId == request.auth.uid);
       }
     }
 
@@ -58,15 +62,15 @@ service cloud.firestore {
 
     // App settings such as the WhatsApp number for material requests.
     match /settings/{settingId} {
-      allow read: if isActive();
+      allow read: if isStaff();
       allow write: if isAdmin();
     }
 
     // Admins set up items; staff may only change the stock count (with history).
     match /inventory/{itemId} {
-      allow read: if isActive();
+      allow read: if isStaff();
       allow create, delete: if isAdmin();
-      allow update: if isActive()
+      allow update: if isStaff()
         && request.resource.data.name is string
         && request.resource.data.stock is number
         && request.resource.data.stock >= 0
@@ -75,19 +79,19 @@ service cloud.firestore {
 
       // Stock history is append-only.
       match /history/{entryId} {
-        allow read: if isActive();
-        allow create: if isActive() && request.resource.data.byId == request.auth.uid;
+        allow read: if isStaff();
+        allow create: if isStaff() && request.resource.data.byId == request.auth.uid;
         allow update, delete: if false;
       }
     }
 
     // Material requests: anyone active can create and move them along; only admins delete.
     match /inventoryRequests/{requestId} {
-      allow read: if isActive();
-      allow create: if isActive()
+      allow read: if isStaff();
+      allow create: if isStaff()
         && request.resource.data.requestedById == request.auth.uid
         && request.resource.data.status == 'requested';
-      allow update: if isActive()
+      allow update: if isStaff()
         && resource.data.status != 'received'
         && request.resource.data.status in ['requested', 'ordered', 'received', 'cancelled']
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -98,7 +102,7 @@ service cloud.firestore {
 
     // Lets the app load every patient's notes in one query (collection group).
     match /{path=**}/notes/{noteId} {
-      allow read: if isActive();
+      allow read: if isStaff();
     }
   }
 }

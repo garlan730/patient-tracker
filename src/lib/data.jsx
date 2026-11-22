@@ -26,7 +26,7 @@ const DataContext = createContext(null);
 const EMPTY = { patients: false, doctors: false, notes: false };
 
 export function DataProvider({ children }) {
-  const { user, users } = useAuth();
+  const { user, users, isViewer } = useAuth();
   const [patientDocs, setPatientDocs] = useState([]);
   const [notes, setNotes] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -52,13 +52,14 @@ export function DataProvider({ children }) {
         setDoctors(snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name)));
         done('doctors');
       }, fail),
-      onSnapshot(collectionGroup(db, 'notes'), (snap) => {
+      // The TV account (viewer) may not read notes.
+      isViewer ? (done('notes'), () => {}) : onSnapshot(collectionGroup(db, 'notes'), (snap) => {
         setNotes(snap.docs.map((d) => ({ id: d.id, patientId: d.ref.parent.parent.id, ...d.data() })));
         done('notes');
       }, fail),
     ];
     return () => unsubs.forEach((u) => u());
-  }, [userId]);
+  }, [userId, isViewer]);
 
   // Same patient shape the UI used before: notes attached, newest first.
   const patients = useMemo(() => {
