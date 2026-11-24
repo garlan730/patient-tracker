@@ -438,4 +438,12 @@ export const ID = {
   "{n}d": "{n} hr",
   "{step} date": "Tanggal {step}",
   "{step} note": "Catatan {step}",
+  "Last visit today": "Kunjungan terakhir hari ini",
+  "Last visit {n} days ago": "Kunjungan terakhir {n} hari lalu",
+  "No visits recorded yet.": "Belum ada kunjungan yang dicatat.",
+  "+{n} earlier visits": "+{n} kunjungan sebelumnya",
+  "Still planned": "Masih direncanakan",
+  "Press Back to close": "Tekan Kembali untuk menutup",
+  "OK: open visit timeline · Back: return to auto view": "OK: buka riwayat kunjungan · Kembali: tampilan otomatis",
+  "Use the arrows on the remote to pick a patient. For staff only.": "Pakai tombol panah di remote untuk memilih pasien. Khusus staf.",
 };
